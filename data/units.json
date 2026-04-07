@@ -1,0 +1,53 @@
+{
+  "units": [
+    {
+      "unit_id": "water_units",
+      "display_name": "Water Units",
+      "abbrev": "wu",
+      "precision": 1,
+      "display_scale": 1.0
+    },
+    {
+      "unit_id": "kwh",
+      "display_name": "Kilowatt-hours",
+      "abbrev": "kWh",
+      "precision": 1,
+      "display_scale": 1.0
+    },
+    {
+      "unit_id": "meal_units",
+      "display_name": "Meal Units",
+      "abbrev": "meals",
+      "precision": 1,
+      "display_scale": 1.0
+    },
+    {
+      "unit_id": "fuel_units",
+      "display_name": "Fuel Units",
+      "abbrev": "fuel",
+      "precision": 1,
+      "display_scale": 1.0
+    },
+    {
+      "unit_id": "supply_crates",
+      "display_name": "Supply Crates",
+      "abbrev": "crates",
+      "precision": 1,
+      "display_scale": 1.0
+    },
+    {
+      "unit_id": "labor_hours",
+      "display_name": "Labor Hours",
+      "abbrev": "hrs",
+      "precision": 1,
+      "display_scale": 1.0
+    },
+    {
+      "unit_id": "currency_usd",
+      "display_name": "US Dollars",
+      "abbrev": "USD",
+      "precision": 2,
+      "display_scale": 1.0
+    }
+  ]
+}

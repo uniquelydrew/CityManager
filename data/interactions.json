@@ -1,0 +1,196 @@
+{
+  "interactions": [
+    {
+      "interaction_id": "allocate_labor",
+      "verb": "allocate",
+      "inputs": ["labor_hours"],
+      "outputs": ["energy", "water", "food"],
+      "constraints": {"profile_key": "workforce"},
+      "coefficients": {},
+      "priority_order": 10,
+      "explanation_template": "Workers were assigned according to the turn priority.",
+      "ui_label": "Assign workers"
+    },
+    {
+      "interaction_id": "allocate_electricity",
+      "verb": "allocate",
+      "inputs": ["electricity"],
+      "outputs": ["pumps", "food", "civic"],
+      "constraints": {"profile_key": "energy"},
+      "coefficients": {},
+      "priority_order": 20,
+      "explanation_template": "Power was routed across pumps, food systems, and civic services.",
+      "ui_label": "Route power"
+    },
+    {
+      "interaction_id": "allocate_materials",
+      "verb": "allocate",
+      "inputs": ["materials"],
+      "outputs": ["water", "energy", "food"],
+      "constraints": {"profile_key": "materials"},
+      "coefficients": {},
+      "priority_order": 30,
+      "explanation_template": "Repair materials were assigned according to the turn priority.",
+      "ui_label": "Assign materials"
+    },
+    {
+      "interaction_id": "fuel_to_electricity",
+      "verb": "transform",
+      "inputs": ["fuel", "labor_hours"],
+      "outputs": ["electricity"],
+      "constraints": {
+        "constraint_resource": "electricity",
+        "constraint_message": "Power generation was limited by low fuel."
+      },
+      "coefficients": {
+        "base_output_key": "energy",
+        "workforce_input_key": "energy",
+        "workforce_ratio_key": "workforce_to_energy_ratio",
+        "fuel_ratio_key": "fuel_to_energy_ratio"
+      },
+      "priority_order": 40,
+      "explanation_template": "Fuel and workers produced electricity.",
+      "ui_label": "Generate power"
+    },
+    {
+      "interaction_id": "electricity_materials_labor_to_water",
+      "verb": "produce",
+      "inputs": ["electricity", "materials", "labor_hours"],
+      "outputs": ["water"],
+      "constraints": {
+        "constraint_resource": "water",
+        "constraint_message": "Water delivery was limited by pump power, repair materials, or workforce."
+      },
+      "coefficients": {
+        "base_output_key": "water",
+        "energy_allocated_key": "pumps",
+        "energy_ratio_key": "energy_to_water_ratio",
+        "materials_ratio_key": "materials_to_repair_ratio",
+        "workforce_input_key": "water",
+        "workforce_ratio_key": "workforce_to_water_ratio"
+      },
+      "priority_order": 50,
+      "explanation_template": "Power, repair materials, and workers delivered water.",
+      "ui_label": "Run water system"
+    },
+    {
+      "interaction_id": "water_electricity_labor_to_food",
+      "verb": "produce",
+      "inputs": ["water", "electricity", "labor_hours"],
+      "outputs": ["food"],
+      "constraints": {
+        "constraint_resource": "food",
+        "constraint_message": "Food production was limited by water, power, or workforce."
+      },
+      "coefficients": {
+        "base_output_key": "food",
+        "water_ratio_key": "water_to_food_ratio",
+        "energy_input_key": "food",
+        "energy_ratio_key": "energy_to_food_ratio",
+        "workforce_input_key": "food",
+        "workforce_ratio_key": "workforce_to_food_ratio"
+      },
+      "priority_order": 60,
+      "explanation_template": "Water, power, and workers produced food.",
+      "ui_label": "Grow food"
+    },
+    {
+      "interaction_id": "civic_service_energy",
+      "verb": "consume",
+      "inputs": ["electricity"],
+      "outputs": ["civic_services"],
+      "constraints": {
+        "gap_message": "The town was short {gap:.1f} energy for full service demand."
+      },
+      "coefficients": {
+        "allocation_key": "civic"
+      },
+      "priority_order": 70,
+      "explanation_template": "Electricity supported civic services.",
+      "ui_label": "Run civic services"
+    },
+    {
+      "interaction_id": "household_water",
+      "verb": "consume",
+      "inputs": ["water"],
+      "outputs": ["households"],
+      "constraints": {},
+      "coefficients": {
+        "demand_constant_key": "water_consumption"
+      },
+      "priority_order": 80,
+      "explanation_template": "Households used water.",
+      "ui_label": "Household water"
+    },
+    {
+      "interaction_id": "household_food",
+      "verb": "consume",
+      "inputs": ["food"],
+      "outputs": ["households"],
+      "constraints": {},
+      "coefficients": {
+        "demand_constant_key": "food_consumption"
+      },
+      "priority_order": 90,
+      "explanation_template": "Households used food.",
+      "ui_label": "Household food"
+    },
+    {
+      "interaction_id": "materials_maintenance",
+      "verb": "repair",
+      "inputs": ["materials"],
+      "outputs": ["water_system"],
+      "constraints": {},
+      "coefficients": {
+        "demand_constant_key": "materials_maintenance_cost"
+      },
+      "priority_order": 100,
+      "explanation_template": "Repair materials supported system maintenance.",
+      "ui_label": "Maintain systems"
+    },
+    {
+      "interaction_id": "water_decay",
+      "verb": "decay",
+      "inputs": ["water"],
+      "outputs": [],
+      "constraints": {},
+      "coefficients": {
+        "loss_rate_key": "water_leakage_rate",
+        "loss_multiplier_key": "water_leakage_multiplier",
+        "support_resource": "materials",
+        "support_effect_per_unit": 0.02
+      },
+      "priority_order": 110,
+      "explanation_template": "Stored water leaked from the system.",
+      "ui_label": "Water leakage"
+    },
+    {
+      "interaction_id": "food_decay",
+      "verb": "decay",
+      "inputs": ["food"],
+      "outputs": [],
+      "constraints": {},
+      "coefficients": {
+        "loss_rate_key": "food_spoilage_rate",
+        "loss_multiplier_key": "food_spoilage_multiplier"
+      },
+      "priority_order": 120,
+      "explanation_template": "Stored food spoiled.",
+      "ui_label": "Food spoilage"
+    },
+    {
+      "interaction_id": "materials_decay",
+      "verb": "decay",
+      "inputs": ["materials"],
+      "outputs": [],
+      "constraints": {},
+      "coefficients": {
+        "loss_rate_key": "materials_loss_rate",
+        "loss_multiplier_key": "materials_loss_multiplier"
+      },
+      "priority_order": 130,
+      "explanation_template": "Stored repair materials were lost or damaged.",
+      "ui_label": "Materials loss"
+    }
+  ]
+}

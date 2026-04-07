@@ -1,0 +1,106 @@
+{
+  "resource_types": [
+    {
+      "resource_type_id": "water",
+      "display_name": "Water",
+      "player_label": "Water",
+      "unit_id": "water_units",
+      "category": "core_supply",
+      "storage": {
+        "capacity_key": "water_capacity",
+        "default_capacity": 100.0
+      },
+      "defaults": {
+        "base_quantity": 50.0,
+        "base_production": 30.0
+      },
+      "supported_verbs": ["produce", "consume", "store", "decay"],
+      "tags": ["core", "service"]
+    },
+    {
+      "resource_type_id": "electricity",
+      "display_name": "Electricity",
+      "player_label": "Power",
+      "unit_id": "kwh",
+      "category": "core_supply",
+      "storage": {
+        "capacity_key": "energy_capacity",
+        "default_capacity": 100.0
+      },
+      "defaults": {
+        "base_quantity": 40.0,
+        "base_production": 28.0
+      },
+      "supported_verbs": ["transform", "allocate", "consume", "store"],
+      "tags": ["core", "service"]
+    },
+    {
+      "resource_type_id": "food",
+      "display_name": "Food",
+      "player_label": "Food",
+      "unit_id": "meal_units",
+      "category": "core_supply",
+      "storage": {
+        "capacity_key": "food_capacity",
+        "default_capacity": 100.0
+      },
+      "defaults": {
+        "base_quantity": 60.0,
+        "base_production": 24.0
+      },
+      "supported_verbs": ["produce", "consume", "store", "decay"],
+      "tags": ["core", "household"]
+    },
+    {
+      "resource_type_id": "fuel",
+      "display_name": "Fuel",
+      "player_label": "Fuel",
+      "unit_id": "fuel_units",
+      "category": "support_input",
+      "storage": {
+        "capacity_key": "fuel_capacity",
+        "default_capacity": 80.0
+      },
+      "defaults": {
+        "base_quantity": 25.0,
+        "base_production": 0.0
+      },
+      "supported_verbs": ["transform", "store", "transfer"],
+      "tags": ["support", "power"]
+    },
+    {
+      "resource_type_id": "materials",
+      "display_name": "Materials",
+      "player_label": "Repair Materials",
+      "unit_id": "supply_crates",
+      "category": "support_input",
+      "storage": {
+        "capacity_key": "materials_capacity",
+        "default_capacity": 60.0
+      },
+      "defaults": {
+        "base_quantity": 18.0,
+        "base_production": 0.0
+      },
+      "supported_verbs": ["allocate", "repair", "decay", "store"],
+      "tags": ["support", "repair"]
+    },
+    {
+      "resource_type_id": "labor_hours",
+      "display_name": "Labor Hours",
+      "player_label": "Available Workers",
+      "unit_id": "labor_hours",
+      "category": "support_input",
+      "storage": {
+        "capacity_key": "workforce_capacity",
+        "default_capacity": 100.0
+      },
+      "defaults": {
+        "base_quantity": 75.0,
+        "base_production": 0.0
+      },
+      "supported_verbs": ["allocate", "produce", "transform"],
+      "tags": ["support", "labor"]
+    }
+  ]
+}
