@@ -11,9 +11,11 @@ def math_prompt(scenario: Dict[str, Any], risk_ranking: List[Dict[str, Any]]) ->
     top = issue_label(risk_ranking[0]["issue_id"])
     second = issue_label(risk_ranking[1]["issue_id"]) if len(risk_ranking) > 1 else top
     return (
-        "Allocate the emergency budget across energy, water, and food purchases.\n"
+        "Allocate the emergency budget across energy, water, food, fuel, and materials purchases.\n"
         f"Available emergency budget: {scenario['available_emergency_budget']:.2f}\n"
-        f"Unit costs -> energy: {unit_costs['energy']:.2f}, water: {unit_costs['water']:.2f}, food: {unit_costs['food']:.2f}\n"
+        "Unit costs -> "
+        f"energy: {unit_costs['energy']:.2f}, water: {unit_costs['water']:.2f}, food: {unit_costs['food']:.2f}, "
+        f"fuel: {unit_costs['fuel']:.2f}, materials: {unit_costs['materials']:.2f}\n"
         f"Top risks -> {top}, {second}"
     )
 
@@ -25,19 +27,22 @@ def validate_allocation(
 ) -> Tuple[bool, float]:
     """Validate emergency allocation total cost and rough relevance."""
     unit_costs = scenario["unit_costs"]
-    total_cost = (
-        allocation["energy_amount"] * unit_costs["energy"]
-        + allocation["water_amount"] * unit_costs["water"]
-        + allocation["food_amount"] * unit_costs["food"]
-    )
+    key_map = {
+        "energy": allocation.get("energy", allocation.get("energy_amount", 0.0)),
+        "water": allocation.get("water", allocation.get("water_amount", 0.0)),
+        "food": allocation.get("food", allocation.get("food_amount", 0.0)),
+        "fuel": allocation.get("fuel", 0.0),
+        "materials": allocation.get("materials", 0.0),
+    }
+    total_cost = sum(key_map[name] * unit_costs[name] for name in key_map)
     valid_budget = total_cost <= scenario["available_emergency_budget"] + 1e-9
     top_two = {risk_ranking[0]["issue_id"]}
     if len(risk_ranking) > 1:
         top_two.add(risk_ranking[1]["issue_id"])
     relevant = (
-        ("energy_instability" in top_two and allocation["energy_amount"] > 0)
-        or ("water_shortage" in top_two and allocation["water_amount"] > 0)
-        or ("food_collapse" in top_two and allocation["food_amount"] > 0)
+        ("energy_instability" in top_two and (key_map["energy"] > 0 or key_map["fuel"] > 0))
+        or ("water_shortage" in top_two and (key_map["water"] > 0 or key_map["materials"] > 0))
+        or ("food_collapse" in top_two and key_map["food"] > 0)
         or total_cost == 0.0
     )
     return valid_budget and relevant, total_cost
@@ -47,7 +52,7 @@ def science_prompt(state: Dict[str, Any], context: Dict[str, Any], required_gene
     """Build the explicit energy-generation reasoning prompt."""
     recommended_reserve = context["pump_threshold"] + context["constants"]["science_safety_margin"]
     return (
-        f"Current energy: {state['resources']['energy']:.1f}\n"
+        f"Current energy: {state['resources']['energy']['stock']:.1f}\n"
         f"Effective demand: {context['effective_energy_demand']:.1f}\n"
         f"Pump threshold: {context['pump_threshold']:.1f}\n"
         f"Recommended reserve after demand: {recommended_reserve:.1f}\n"

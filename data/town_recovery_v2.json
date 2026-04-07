@@ -1,16 +1,52 @@
 {
-  "scenario_id": "town_recovery_v2",
-  "description": "Player stabilizes a failing town by managing interacting systems under budget and infrastructure constraints",
-  "systems": ["economy", "water", "energy", "food", "population"],
+  "scenario_id": "town_recovery_v3_logistics",
+  "description": "Player stabilizes a failing town by managing resource flows, supporting logistics, and infrastructure constraints.",
+  "systems": ["economy", "water", "energy", "food", "population", "fuel", "materials", "workforce_capacity"],
   "failure_state": "system_collapse",
   "success_state": "stable_equilibrium",
-  "turn_model": "discrete_deterministic_dependency_propagation",
-  "turns": 4,
-  "available_emergency_budget": 200.0,
+  "turn_model": "discrete_deterministic_resource_flow",
+  "turns": 5,
+  "available_emergency_budget": 320.0,
   "unit_costs": {
     "energy": 5.0,
     "water": 6.0,
-    "food": 4.0
+    "food": 4.0,
+    "fuel": 3.0,
+    "materials": 4.0
+  },
+  "initial_resources": {
+    "water": 50.0,
+    "energy": 40.0,
+    "food": 60.0,
+    "fuel": 25.0,
+    "materials": 18.0,
+    "workforce_capacity": 75.0
+  },
+  "resource_limits": {
+    "water_capacity": 100.0,
+    "energy_capacity": 100.0,
+    "food_capacity": 100.0,
+    "fuel_capacity": 80.0,
+    "materials_capacity": 60.0,
+    "workforce_capacity": 100.0
+  },
+  "base_production": {
+    "water": 30.0,
+    "energy": 28.0,
+    "food": 24.0,
+    "fuel": 0.0,
+    "materials": 0.0,
+    "workforce_capacity": 0.0
+  },
+  "conversion_rates": {
+    "fuel_to_energy_ratio": 1.8,
+    "workforce_to_energy_ratio": 0.7,
+    "energy_to_water_ratio": 1.3,
+    "materials_to_repair_ratio": 1.4,
+    "workforce_to_water_ratio": 0.9,
+    "water_to_food_ratio": 0.8,
+    "energy_to_food_ratio": 0.9,
+    "workforce_to_food_ratio": 0.85
   },
   "constants": {
     "water_consumption": 20.0,
@@ -21,14 +57,11 @@
     "food_security_threshold": 20.0,
     "labor_threshold": 0.65,
     "unrest_threshold": 0.25,
-    "energy_to_water_penalty": 10.0,
-    "water_to_food_penalty": 10.0,
     "food_to_health_penalty": 0.1,
+    "water_health_penalty": 0.08,
     "health_to_income_penalty": 100.0,
     "unrest_to_budget_penalty": 75.0,
     "happiness_to_unrest_penalty": 0.1,
-    "procurement_penalty": 10.0,
-    "energy_procurement_threshold": 9500.0,
     "base_energy_recovery": 10.0,
     "science_safety_margin": 5.0,
     "energy_recovery_surplus_threshold": 10.0,
@@ -41,6 +74,13 @@
     "safe_water_threshold": 30.0,
     "safe_food_threshold": 30.0,
     "safe_health_threshold": 0.7,
-    "safe_budget_threshold": 9000.0
+    "safe_budget_threshold": 9000.0,
+    "water_leakage_rate": 0.08,
+    "food_spoilage_rate": 0.06,
+    "materials_loss_rate": 0.03,
+    "materials_maintenance_cost": 3.0,
+    "fuel_risk_threshold": 12.0,
+    "materials_risk_threshold": 8.0,
+    "workforce_risk_threshold": 45.0
   }
 }

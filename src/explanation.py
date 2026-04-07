@@ -19,6 +19,8 @@ def empty_outcome() -> Dict[str, Any]:
         "propagated_projection": {},
         "modifier_projection": {},
         "recovery_projection": {},
+        "resource_flow_projection": {},
+        "constraint_preview": [],
     }
 
 

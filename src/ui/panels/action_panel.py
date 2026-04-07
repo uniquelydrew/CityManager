@@ -16,7 +16,7 @@ class ActionPanel(QWidget):
         super().__init__()
         layout = QVBoxLayout(self)
 
-        self.unit_costs = {"energy": 5.0, "water": 6.0, "food": 4.0}
+        self.unit_costs = {"energy": 5.0, "water": 6.0, "food": 4.0, "fuel": 3.0, "materials": 4.0}
         self.available_budget = 200.0
         self.policy_cost = 0.0
 
@@ -30,16 +30,25 @@ class ActionPanel(QWidget):
         self.energy_input = self._make_spinbox()
         self.water_input = self._make_spinbox()
         self.food_input = self._make_spinbox()
+        self.fuel_input = self._make_spinbox()
+        self.materials_input = self._make_spinbox()
 
         self.energy_help = QLabel("Cost: $5 per unit\nHelps reduce power shortage risk.")
         self.water_help = QLabel("Cost: $6 per unit\nHelps protect water service.")
         self.food_help = QLabel("Cost: $4 per unit\nHelps protect food supply.")
-        for label in [self.energy_help, self.water_help, self.food_help]:
+        self.fuel_help = QLabel("Cost: $3 per unit\nHelps power generation keep running.")
+        self.materials_help = QLabel("Cost: $4 per unit\nHelps repairs and reduces system losses.")
+        for label in [self.energy_help, self.water_help, self.food_help, self.fuel_help, self.materials_help]:
             label.setWordWrap(True)
 
         self.energy_cost_label = QLabel("Current purchase: 0 units = $0")
         self.water_cost_label = QLabel("Current purchase: 0 units = $0")
         self.food_cost_label = QLabel("Current purchase: 0 units = $0")
+        self.fuel_cost_label = QLabel("Current purchase: 0 units = $0")
+        self.materials_cost_label = QLabel("Current purchase: 0 units = $0")
+
+        self.priority_label = QLabel("Choose a Service Priority")
+        self.priority_input = QComboBox()
 
         self.policy_label = QLabel("Choose a Policy")
         self.policy_input = QComboBox()
@@ -66,6 +75,16 @@ class ActionPanel(QWidget):
         layout.addWidget(self.food_input)
         layout.addWidget(self.food_help)
         layout.addWidget(self.food_cost_label)
+        layout.addWidget(QLabel("Buy Emergency Fuel"))
+        layout.addWidget(self.fuel_input)
+        layout.addWidget(self.fuel_help)
+        layout.addWidget(self.fuel_cost_label)
+        layout.addWidget(QLabel("Buy Emergency Materials"))
+        layout.addWidget(self.materials_input)
+        layout.addWidget(self.materials_help)
+        layout.addWidget(self.materials_cost_label)
+        layout.addWidget(self.priority_label)
+        layout.addWidget(self.priority_input)
         layout.addWidget(self.policy_label)
         layout.addWidget(self.policy_input)
         layout.addWidget(self.policy_help)
@@ -76,9 +95,15 @@ class ActionPanel(QWidget):
         layout.addWidget(self.submit_button)
         layout.addStretch(1)
 
-        for widget in [self.energy_input, self.water_input, self.food_input]:
+        self.priority_input.addItem("Balance Services", "balance_services")
+        self.priority_input.addItem("Keep Water Running", "keep_water_running")
+        self.priority_input.addItem("Protect Food Supply", "protect_food_supply")
+        self.priority_input.addItem("Stabilize Power", "stabilize_power")
+
+        for widget in [self.energy_input, self.water_input, self.food_input, self.fuel_input, self.materials_input]:
             widget.valueChanged.connect(self._update_cost_summary)
             widget.valueChanged.connect(lambda *_: self.actions_changed.emit())
+        self.priority_input.currentIndexChanged.connect(lambda *_: self.actions_changed.emit())
         self.policy_input.currentIndexChanged.connect(self._update_cost_summary)
         self.policy_input.currentIndexChanged.connect(lambda *_: self.actions_changed.emit())
         self._update_cost_summary()
@@ -100,6 +125,12 @@ class ActionPanel(QWidget):
         )
         self.food_help.setText(
             f"Cost: ${self.unit_costs['food']:.0f} per unit\nHelps protect food supply."
+        )
+        self.fuel_help.setText(
+            f"Cost: ${self.unit_costs['fuel']:.0f} per unit\nHelps power generation keep running."
+        )
+        self.materials_help.setText(
+            f"Cost: ${self.unit_costs['materials']:.0f} per unit\nHelps repairs and reduces system losses."
         )
         self._update_cost_summary()
 
@@ -127,9 +158,11 @@ class ActionPanel(QWidget):
         energy_total = self.energy_input.value() * self.unit_costs["energy"]
         water_total = self.water_input.value() * self.unit_costs["water"]
         food_total = self.food_input.value() * self.unit_costs["food"]
+        fuel_total = self.fuel_input.value() * self.unit_costs["fuel"]
+        materials_total = self.materials_input.value() * self.unit_costs["materials"]
         selected_policy = self.selected_policy()
         self.policy_cost = float(selected_policy["cost"]) if selected_policy else 0.0
-        emergency_total = energy_total + water_total + food_total
+        emergency_total = energy_total + water_total + food_total + fuel_total + materials_total
         remaining = self.available_budget - emergency_total
         self.energy_cost_label.setText(
             f"Current purchase: {self.energy_input.value()} units = ${energy_total:.0f}"
@@ -139,6 +172,12 @@ class ActionPanel(QWidget):
         )
         self.food_cost_label.setText(
             f"Current purchase: {self.food_input.value()} units = ${food_total:.0f}"
+        )
+        self.fuel_cost_label.setText(
+            f"Current purchase: {self.fuel_input.value()} units = ${fuel_total:.0f}"
+        )
+        self.materials_cost_label.setText(
+            f"Current purchase: {self.materials_input.value()} units = ${materials_total:.0f}"
         )
         if selected_policy:
             self.policy_help.setText(selected_policy["summary"])
@@ -155,14 +194,20 @@ class ActionPanel(QWidget):
             "energy": float(self.energy_input.value()),
             "water": float(self.water_input.value()),
             "food": float(self.food_input.value()),
+            "fuel": float(self.fuel_input.value()),
+            "materials": float(self.materials_input.value()),
+            "allocation_priority": self.priority_input.currentData(),
             "policy_id": self.selected_policy()["policy_id"] if self.selected_policy() else None,
         }
 
     def reset_inputs(self):
-        for widget in [self.energy_input, self.water_input, self.food_input]:
+        for widget in [self.energy_input, self.water_input, self.food_input, self.fuel_input, self.materials_input]:
             widget.blockSignals(True)
             widget.setValue(0)
             widget.blockSignals(False)
+        self.priority_input.blockSignals(True)
+        self.priority_input.setCurrentIndex(0)
+        self.priority_input.blockSignals(False)
         self.policy_input.blockSignals(True)
         self.policy_input.setCurrentIndex(0)
         self.policy_input.blockSignals(False)

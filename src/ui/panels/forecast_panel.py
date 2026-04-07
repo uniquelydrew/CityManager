@@ -5,6 +5,8 @@ from src.ui.formatters import (
     consequence_sentence,
     improvement_lines,
     outlook_lines,
+    resource_flow_lines,
+    supply_change_lines,
     system_links,
     top_risk_cards,
     urgent_problem_sentence,
@@ -22,11 +24,12 @@ class ForecastPanel(QWidget):
 
         self.problem = self._make_card("Urgent Problem", 90)
         self.goal = self._make_card("What Happens Next", 140)
-        self.links = self._make_card("System Links", 120)
+        self.flow = self._make_card("Resource Flow", 120)
+        self.links = self._make_card("Why Supply Changed", 120)
         self.improves = self._make_card("What Improves If Fixed", 110)
         self.risks = self._make_card("Urgent Problems", 150)
 
-        for card in [self.problem, self.goal, self.links, self.improves, self.risks]:
+        for card in [self.problem, self.goal, self.flow, self.links, self.improves, self.risks]:
             container = QWidget()
             container_layout = QVBoxLayout(container)
             container_layout.setContentsMargins(0, 0, 0, 0)
@@ -58,8 +61,9 @@ class ForecastPanel(QWidget):
         self.goal["body"].setPlainText(
             "\n".join(outlook_lines(forecast)) or "No next-turn forecast is available."
         )
-        self.links["body"].setPlainText("\n".join(system_links(forecast)))
+        self.flow["body"].setPlainText("\n".join(resource_flow_lines(forecast)))
+        self.links["body"].setPlainText("\n".join(supply_change_lines(forecast)))
         self.improves["body"].setPlainText("\n".join(improvement_lines(forecast)))
         self.risks["body"].setPlainText(
-            "\n\n".join(top_risk_cards(forecast))
+            "\n\n".join(top_risk_cards(forecast) + ["\n".join(system_links(forecast))])
         )

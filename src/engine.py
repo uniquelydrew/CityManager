@@ -1,4 +1,6 @@
-"""Phase 3 predictive CLI simulation for the town recovery scenario."""
+"""Logistics-first deterministic simulation for the town recovery scenario."""
+
+from __future__ import annotations
 
 import copy
 import json
@@ -19,9 +21,8 @@ from src.challenges import (
     validate_science_generation,
 )
 from src.economy import compute_effective_income, update_budget
-from src.energy import capped_energy_purchase, effective_energy_demand
 from src.explanation import empty_outcome, record
-from src.food import effective_irrigation_threshold, food_output_bonus, recovery_bonus as food_recovery_bonus
+from src.food import effective_irrigation_threshold
 from src.forecast import build_forecast as build_forecast_payload
 from src.modifiers import (
     activate_policy,
@@ -33,8 +34,20 @@ from src.modifiers import (
 )
 from src.population import apply_unrest, clamp, recover_health
 from src.reports import generate_report_text, issue_label
+from src.resource_utils import (
+    add_stock,
+    allocate,
+    end_of_turn_ledger,
+    ensure_resource_records,
+    record_import,
+    record_loss,
+    record_production,
+    reset_turn_metrics,
+    resource_record,
+    set_stock,
+    stock,
+)
 from src.risk import compute_risk_ranking
-from src.water import effective_water_capacity, effective_water_penalty, recovery_bonus as water_recovery_bonus
 
 
 State = Dict[str, Any]
@@ -43,7 +56,7 @@ OutcomeReport = Dict[str, Any]
 
 
 class SimulationEngine:
-    """Orchestrates the gameplay loop for the town recovery Phase 3 scenario."""
+    """Orchestrates the playable logistics loop for the town recovery scenario."""
 
     def __init__(self, data_dir: str) -> None:
         self.data_dir = data_dir
@@ -52,6 +65,7 @@ class SimulationEngine:
         self.policies_data = self._load_json("policies.json")
         self.policy_map = policy_map(self.policies_data)
         self.turns = int(self.scenario.get("turns", 4))
+        self.resource_defaults = self._resource_defaults()
         self.state = self._normalize_state(self._load_json("state.json"))
         self.skills_used: Dict[str, bool] = {
             "math": False,
@@ -65,9 +79,22 @@ class SimulationEngine:
         with open(path, "r", encoding="utf-8") as handle:
             return json.load(handle)
 
+    def _resource_defaults(self) -> Dict[str, Dict[str, float]]:
+        limits = self.scenario.get("resource_limits", {})
+        base = self.scenario.get("base_production", {})
+        initial = self.scenario.get("initial_resources", {})
+        return {
+            "water": resource_record(initial.get("water", 50.0), limits.get("water_capacity", 100.0), base.get("water", 30.0)),
+            "energy": resource_record(initial.get("energy", 40.0), limits.get("energy_capacity", 100.0), base.get("energy", 28.0)),
+            "food": resource_record(initial.get("food", 60.0), limits.get("food_capacity", 100.0), base.get("food", 24.0)),
+            "fuel": resource_record(initial.get("fuel", 25.0), limits.get("fuel_capacity", 80.0), base.get("fuel", 0.0)),
+            "materials": resource_record(initial.get("materials", 18.0), limits.get("materials_capacity", 60.0), base.get("materials", 0.0)),
+            "workforce_capacity": resource_record(initial.get("workforce_capacity", 75.0), limits.get("workforce_capacity", 100.0), base.get("workforce_capacity", 0.0)),
+        }
+
     def _default_state(self) -> Dict[str, Any]:
         return {
-            "resources": {"water": 50.0, "energy": 40.0, "food": 60.0},
+            "resources": copy.deepcopy(self.resource_defaults),
             "population": {"count": 1000, "health": 0.7, "happiness": 0.6, "unrest": 0.1},
             "economy": {
                 "budget": 10000.0,
@@ -93,6 +120,10 @@ class SimulationEngine:
                 "last_risk_ranking": [],
                 "last_risk_values": {},
                 "last_outcome_chain": [],
+                "turn_resource_ledger": {},
+                "resource_flow_history": [],
+                "turn_constraint_log": [],
+                "turn_allocation_snapshot": {},
             },
         }
 
@@ -107,27 +138,61 @@ class SimulationEngine:
 
     def _normalize_state(self, state: Dict[str, Any]) -> Dict[str, Any]:
         normalized = self._deep_merge(self._default_state(), state)
+        normalized["resources"] = ensure_resource_records(normalized["resources"], self.resource_defaults)
         ensure_modifier_containers(normalized)
         if "base_income" not in normalized["economy"]:
             normalized["economy"]["base_income"] = normalized["economy"]["income"]
+        normalized["telemetry"].setdefault("turn_resource_ledger", {})
+        normalized["telemetry"].setdefault("resource_flow_history", [])
+        normalized["telemetry"].setdefault("turn_constraint_log", [])
+        normalized["telemetry"].setdefault("turn_allocation_snapshot", {})
         return normalized
 
     def clone_state(self, state: State) -> State:
         return copy.deepcopy(self._normalize_state(state))
 
+    def _priority_profiles(self) -> Dict[str, Dict[str, Dict[str, float]]]:
+        return {
+            "balance_services": {
+                "workforce": {"energy": 0.35, "water": 0.35, "food": 0.30},
+                "energy": {"pumps": 0.40, "food": 0.30, "civic": 0.30},
+                "materials": {"water": 0.45, "energy": 0.30, "food": 0.25},
+            },
+            "keep_water_running": {
+                "workforce": {"energy": 0.25, "water": 0.50, "food": 0.25},
+                "energy": {"pumps": 0.55, "food": 0.20, "civic": 0.25},
+                "materials": {"water": 0.60, "energy": 0.20, "food": 0.20},
+            },
+            "protect_food_supply": {
+                "workforce": {"energy": 0.20, "water": 0.30, "food": 0.50},
+                "energy": {"pumps": 0.30, "food": 0.45, "civic": 0.25},
+                "materials": {"water": 0.30, "energy": 0.20, "food": 0.50},
+            },
+            "stabilize_power": {
+                "workforce": {"energy": 0.50, "water": 0.25, "food": 0.25},
+                "energy": {"pumps": 0.35, "food": 0.20, "civic": 0.45},
+                "materials": {"water": 0.25, "energy": 0.55, "food": 0.20},
+            },
+        }
+
     def build_context(self, state: State) -> Dict[str, Any]:
         constants = self.scenario["constants"]
         modifier_context = aggregate_modifier_context(state)
         grid_efficiency = state["infrastructure"]["grid_efficiency"] + modifier_context["grid_efficiency_bonus"]
-        water_capacity = effective_water_capacity(
-            state["infrastructure"]["water_capacity"],
-            modifier_context["water_capacity_bonus"],
-        )
+        water_capacity = max(0.2, state["infrastructure"]["water_capacity"] + modifier_context["water_capacity_bonus"])
         food_yield = state["infrastructure"]["food_yield"] + modifier_context["food_yield_bonus"]
-        effective_demand = effective_energy_demand(
-            constants["energy_demand"],
-            grid_efficiency,
-            modifier_context["energy_demand_multiplier"],
+        workforce_base = stock(state["resources"], "workforce_capacity")
+        workforce_available = max(
+            0.0,
+            min(
+                state["resources"]["workforce_capacity"]["capacity"],
+                workforce_base * state["population"]["health"] * max(0.2, 1.0 - state["population"]["unrest"])
+                + modifier_context["workforce_recovery_bonus"] * 10.0,
+            ),
+        )
+        effective_demand = max(
+            0.0,
+            constants["energy_demand"] * (1.0 + modifier_context["energy_demand_multiplier"] - max(0.0, grid_efficiency - 1.0)),
         )
         irrigation_threshold = effective_irrigation_threshold(
             constants["irrigation_threshold"],
@@ -135,23 +200,33 @@ class SimulationEngine:
         )
         return {
             "constants": constants,
+            "modifier_context": modifier_context,
+            "grid_efficiency": grid_efficiency,
+            "water_capacity_multiplier": water_capacity,
+            "food_yield": food_yield,
             "effective_energy_demand": effective_demand,
             "pump_threshold": constants["water_pump_threshold"] * water_capacity,
             "irrigation_threshold": irrigation_threshold,
-            "grid_efficiency": grid_efficiency,
-            "water_capacity": water_capacity,
-            "food_yield": food_yield,
-            "modifier_context": modifier_context,
+            "workforce_available": workforce_available,
+            "resource_limits": self.scenario["resource_limits"],
+            "base_production": self.scenario["base_production"],
+            "conversion_rates": self.scenario["conversion_rates"],
+            "allocation_profiles": self._priority_profiles(),
+            "unit_costs": self.scenario["unit_costs"],
+            "available_emergency_budget": self.scenario["available_emergency_budget"],
         }
 
     def observe_state(self) -> None:
         res = self.state["resources"]
         pop = self.state["population"]
         econ = self.state["economy"]
-        infra = self.state["infrastructure"]
         streak = self.state["telemetry"].get("stable_turn_streak", 0)
         print("\n=== Current State ===")
-        print(f"Water: {res['water']:.1f}  Energy: {res['energy']:.1f}  Food: {res['food']:.1f}")
+        print(
+            "Resources: "
+            f"water={stock(res, 'water'):.1f} energy={stock(res, 'energy'):.1f} food={stock(res, 'food'):.1f} "
+            f"fuel={stock(res, 'fuel'):.1f} materials={stock(res, 'materials'):.1f} workforce={stock(res, 'workforce_capacity'):.1f}"
+        )
         print(
             f"Population: count={int(pop['count'])}, health={pop['health']:.2f}, "
             f"happiness={pop['happiness']:.2f}, unrest={pop['unrest']:.2f}"
@@ -160,10 +235,6 @@ class SimulationEngine:
             f"Economy: budget=${econ['budget']:.2f}, income=${econ['income']:.2f}, "
             f"base_income=${econ['base_income']:.2f}, expenses=${econ['expenses']:.2f}, "
             f"service_penalty=${econ['service_penalty']:.2f}"
-        )
-        print(
-            f"Infrastructure: water_capacity={infra['water_capacity']:.2f}, "
-            f"grid_efficiency={infra['grid_efficiency']:.2f}, food_yield={infra['food_yield']:.2f}"
         )
         active = ", ".join(self.state["modifiers"]["active_policies"]) or "none"
         print(f"Active policies: {active}")
@@ -176,28 +247,17 @@ class SimulationEngine:
         return forecast
 
     def display_forecast(self, forecast: Dict[str, Any]) -> None:
-        print("\n=== Forecast Base Changes ===")
-        for system, values in forecast["base_projection"].items():
-            print(f"- {system}: {values}")
-        print("\n=== Forecast Dependency Changes ===")
-        for system, values in forecast["propagated_projection"].items():
-            print(f"- {system}: {values}")
-        print("\n=== Forecast Modifier Changes ===")
-        for system, values in forecast["modifier_projection"].items():
-            print(f"- {system}: {values}")
-        print("\n=== Forecast Recovery Changes ===")
-        for system, values in forecast["recovery_projection"].items():
-            print(f"- {system}: {values}")
+        print("\n=== Forecast Resource Flow ===")
+        for resource, values in forecast["resource_flow_projection"].items():
+            print(f"- {resource}: {values}")
+        print("\n=== Forecast Constraints ===")
+        for line in forecast.get("constraint_preview", []):
+            print(f"- {line}")
         print("\n=== Forecast Risk Ranking ===")
         for risk in forecast["risk_ranking"][:3]:
             print(
-                f"- {issue_label(risk['issue_id'])}: severity {risk['severity']:.2f} "
-                f"because {risk['reason']}"
+                f"- {issue_label(risk['issue_id'])}: severity {risk['severity']:.2f} because {risk['reason']}"
             )
-        if forecast.get("risk_changes"):
-            print("\n=== Forecast Risk Movement ===")
-            for line in forecast["risk_changes"]:
-                print(f"- {line}")
 
     def prompt_choice(self, prompt: str, valid_choices: List[str]) -> str:
         while True:
@@ -239,40 +299,34 @@ class SimulationEngine:
             "primary_issue": self.risk_id_from_option(primary),
             "secondary_issue": self.risk_id_from_option(secondary),
         }
-        if validate_rla_answers(
-            answers["primary_issue"],
-            answers["secondary_issue"],
-            forecast["risk_ranking"],
-        ):
+        if validate_rla_answers(answers["primary_issue"], answers["secondary_issue"], forecast["risk_ranking"]):
             self.skills_used["rla"] = True
             print("Correct. You identified the top two signals in the report.")
         else:
             print("Not quite. The report mixes multiple signals, and the order matters.")
         return answers
 
-    def math_challenge(self, forecast: Dict[str, Any]) -> Dict[str, float]:
+    def math_challenge(self, forecast: Dict[str, Any]) -> Dict[str, Any]:
         print("\nMath Challenge:")
         print(math_prompt(self.scenario, forecast["risk_ranking"]))
-        allocation = {
-            "energy_amount": self.prompt_float("Energy units to buy: "),
-            "water_amount": self.prompt_float("Water units to buy: "),
-            "food_amount": self.prompt_float("Food units to buy: "),
+        purchases = {
+            "energy": self.prompt_float("Emergency energy to buy: "),
+            "water": self.prompt_float("Emergency water to buy: "),
+            "food": self.prompt_float("Emergency food to buy: "),
+            "fuel": self.prompt_float("Emergency fuel to buy: "),
+            "materials": self.prompt_float("Emergency materials to buy: "),
         }
-        valid, total_cost = validate_allocation(allocation, self.scenario, forecast["risk_ranking"])
-        allocation["total_cost"] = total_cost
+        valid, total_cost = validate_allocation(purchases, self.scenario, forecast["risk_ranking"])
         if valid:
             self.skills_used["math"] = True
             print(f"Valid allocation. Total emergency cost is ${total_cost:.2f}.")
         else:
-            print(
-                f"Invalid allocation. Total emergency cost is ${total_cost:.2f}, "
-                "and it must stay within budget while helping top risks."
-            )
-        return allocation
+            print(f"Invalid allocation. Total emergency cost is ${total_cost:.2f}.")
+        return {"resource_purchases": purchases, "total_cost": total_cost}
 
     def science_challenge(self, forecast: Dict[str, Any]) -> float:
         context = forecast["context"]
-        current_energy = self.state["resources"]["energy"]
+        current_energy = stock(self.state["resources"], "energy")
         required_amount = required_generation(
             current_energy,
             context["effective_energy_demand"],
@@ -286,41 +340,42 @@ class SimulationEngine:
             self.skills_used["science"] = True
             print("Correct. That generation target protects the post-demand reserve.")
         else:
-            print(
-                f"Insufficient. You needed at least {required_amount:.1f} additional generation "
-                "to protect the water system."
-            )
+            print(f"Insufficient. You needed at least {required_amount:.1f}.")
         return answer
 
-    def social_challenge(self, forecast: Dict[str, Any], spent: float) -> str:
+    def social_challenge(self, forecast: Dict[str, Any], spent: float) -> Tuple[str | None, str]:
         print("\nSocial Studies Challenge:")
-        available = [policy for policy in self.policies_data["policies"]]
+        available = list(self.policies_data["policies"])
         for line in social_prompt(available, self.state["economy"]["budget"] - spent):
             print(line)
-        choice = self.prompt_choice("Choose a policy (A-F): ", [policy["label"] for policy in available])
+        choice = self.prompt_choice("Choose a policy (A-I): ", [policy["label"] for policy in available])
+        preset = self.prompt_choice(
+            "Choose an allocation priority: A) Keep Water Running B) Protect Food Supply C) Stabilize Power D) Balance Services ",
+            ["A", "B", "C", "D"],
+        )
+        priority_map = {
+            "A": "keep_water_running",
+            "B": "protect_food_supply",
+            "C": "stabilize_power",
+            "D": "balance_services",
+        }
         policy = next(policy for policy in available if policy["label"] == choice)
         can_use, reason = can_select_policy(self.state, policy)
-        top_two = {forecast["risk_ranking"][0]["issue_id"], forecast["risk_ranking"][1]["issue_id"]}
-        improves_future = (
-            policy["policy_id"] in {"pump_repair_program", "grid_maintenance", "irrigation_upgrade"}
-            or (policy["policy_id"] == "water_emergency_crews" and "water_shortage" in top_two)
-            or (policy["policy_id"] == "grid_fuel_delivery" and "energy_instability" in top_two)
-            or (policy["policy_id"] == "food_relief_convoy" and "food_collapse" in top_two)
-        )
-        if can_use and improves_future:
+        if can_use:
             self.skills_used["social"] = True
-            print("Good policy choice. It addresses a current or future bottleneck.")
-        else:
-            print(reason or "That policy is legal, but it does not address the strongest tradeoff well.")
-        return policy["policy_id"]
+            print("Good policy choice.")
+            return policy["policy_id"], priority_map[preset]
+        print(reason or "That choice is unavailable.")
+        return None, priority_map[preset]
 
     def collect_player_actions(self, forecast: Dict[str, Any]) -> Actions:
         parsed_report_issue = self.rla_challenge(forecast)
-        emergency_allocation = self.math_challenge(forecast)
+        purchase_bundle = self.math_challenge(forecast)
         science_generation_answer = self.science_challenge(forecast)
-        selected_policy_id = self.social_challenge(forecast, emergency_allocation["total_cost"])
+        selected_policy_id, allocation_priority = self.social_challenge(forecast, purchase_bundle["total_cost"])
         return {
-            "emergency_allocation": emergency_allocation,
+            "resource_purchases": purchase_bundle["resource_purchases"],
+            "allocation_priority": allocation_priority,
             "selected_policy_id": selected_policy_id,
             "risk_assessment": {
                 "primary_risk": parsed_report_issue["primary_issue"],
@@ -328,36 +383,10 @@ class SimulationEngine:
             },
             "parsed_report_issue": parsed_report_issue,
             "science_generation_answer": science_generation_answer,
+            "emergency_total_cost": purchase_bundle["total_cost"],
         }
 
-    def _auto_policy_for_gui(self, forecast: Dict[str, Any], spent: float) -> str | None:
-        """Pick a deterministic policy for the GUI adapter."""
-        remaining_budget = self.state["economy"]["budget"] - spent
-        top_risks = [risk["issue_id"] for risk in forecast["risk_ranking"][:2]]
-        preferred_order = []
-        if "energy_instability" in top_risks:
-            preferred_order.extend(["grid_maintenance", "grid_fuel_delivery"])
-        if "water_shortage" in top_risks:
-            preferred_order.extend(["pump_repair_program", "water_emergency_crews"])
-        if "food_collapse" in top_risks:
-            preferred_order.extend(["irrigation_upgrade", "food_relief_convoy"])
-        if "budget_erosion" in top_risks:
-            preferred_order.extend(["grid_maintenance"])
-        seen: set[str] = set()
-        for policy_id in preferred_order:
-            if policy_id in seen:
-                continue
-            seen.add(policy_id)
-            policy = self.policy_map[policy_id]
-            if policy["cost"] > remaining_budget:
-                continue
-            can_use, _ = can_select_policy(self.state, policy)
-            if can_use:
-                return policy_id
-        return None
-
     def format_explanation_text(self, outcome_report: OutcomeReport) -> str:
-        """Flatten the structured outcome into readable multiline text."""
         sections = [
             "direct_effects",
             "dependency_effects",
@@ -370,8 +399,7 @@ class SimulationEngine:
         ]
         lines: List[str] = []
         for heading in sections:
-            title = heading.replace("_", " ").title()
-            lines.append(f"{title}:")
+            lines.append(f"{heading.replace('_', ' ').title()}:")
             entries = outcome_report.get(heading, [])
             if entries:
                 lines.extend(f"- {entry}" for entry in entries)
@@ -379,40 +407,35 @@ class SimulationEngine:
                 lines.append("- none")
         return "\n".join(lines)
 
+    def _resource_purchases_from_gui(self, actions: Dict[str, float]) -> Dict[str, float]:
+        return {
+            "energy": float(actions.get("energy", 0.0)),
+            "water": float(actions.get("water", 0.0)),
+            "food": float(actions.get("food", 0.0)),
+            "fuel": float(actions.get("fuel", 0.0)),
+            "materials": float(actions.get("materials", 0.0)),
+        }
+
     def step(self, actions: Dict[str, float]) -> Dict[str, Any]:
-        """GUI adapter that advances one deterministic turn without duplicating logic."""
         forecast = self.build_forecast(self.state)
         context = forecast["context"]
         top_primary = forecast["risk_ranking"][0]["issue_id"]
         top_secondary = forecast["risk_ranking"][1]["issue_id"] if len(forecast["risk_ranking"]) > 1 else top_primary
-        emergency_allocation = {
-            "energy_amount": float(actions.get("energy", 0.0)),
-            "water_amount": float(actions.get("water", 0.0)),
-            "food_amount": float(actions.get("food", 0.0)),
-        }
-        _, total_cost = validate_allocation(emergency_allocation, self.scenario, forecast["risk_ranking"])
-        emergency_allocation["total_cost"] = total_cost
-        science_generation_answer = required_generation(
-            self.state["resources"]["energy"],
-            context["effective_energy_demand"],
-            context["pump_threshold"],
-            context["constants"]["science_safety_margin"],
-        )
-        selected_policy_id = actions.get("policy_id")
-        if selected_policy_id is None:
-            selected_policy_id = self._auto_policy_for_gui(forecast, total_cost)
+        resource_purchases = self._resource_purchases_from_gui(actions)
+        _, total_cost = validate_allocation(resource_purchases, self.scenario, forecast["risk_ranking"])
         full_actions = {
-            "emergency_allocation": emergency_allocation,
-            "selected_policy_id": selected_policy_id,
-            "risk_assessment": {
-                "primary_risk": top_primary,
-                "secondary_risk": top_secondary,
-            },
-            "parsed_report_issue": {
-                "primary_issue": top_primary,
-                "secondary_issue": top_secondary,
-            },
-            "science_generation_answer": science_generation_answer,
+            "resource_purchases": resource_purchases,
+            "allocation_priority": actions.get("allocation_priority", "balance_services"),
+            "selected_policy_id": actions.get("policy_id"),
+            "risk_assessment": {"primary_risk": top_primary, "secondary_risk": top_secondary},
+            "parsed_report_issue": {"primary_issue": top_primary, "secondary_issue": top_secondary},
+            "science_generation_answer": required_generation(
+                stock(self.state["resources"], "energy"),
+                context["effective_energy_demand"],
+                context["pump_threshold"],
+                context["constants"]["science_safety_margin"],
+            ),
+            "emergency_total_cost": total_cost,
         }
         self.state, outcome = self.simulate_turn(self.state, full_actions)
         self.last_forecast = self.build_forecast(self.state)
@@ -447,22 +470,99 @@ class SimulationEngine:
             lines.append(f"{issue_label(risk['issue_id'])} {direction}.")
         return lines
 
-    def simulate_turn(self, state: State, actions: Actions, forecast_mode: bool = False) -> Tuple[State, OutcomeReport]:
-        new_state = self.clone_state(state)
-        ensure_modifier_containers(new_state)
-        outcome = empty_outcome()
+    def _apply_policy(
+        self,
+        state: State,
+        selected_policy_id: str | None,
+        outcome: OutcomeReport,
+        direct_adjustment: float,
+        forecast_mode: bool,
+    ) -> float:
+        if not selected_policy_id:
+            return direct_adjustment
+        policy = self.policy_map[selected_policy_id]
+        can_use, reason = can_select_policy(state, policy)
+        if not can_use:
+            if not forecast_mode:
+                record(outcome, "modifier_effects", reason)
+            return direct_adjustment
+        activate_policy(state, policy)
+        direct_adjustment -= float(policy.get("cost", 0.0))
+        for path, delta in policy.get("instant_effects", {}).items():
+            head, key = path.split(".")
+            if head == "resources":
+                record_import(state["resources"], key, float(delta))
+            else:
+                state[head][key] += delta
+        record(outcome, "modifier_effects", f"Selected policy {selected_policy_id} for ${policy['cost']:.2f}.")
+        return direct_adjustment
+
+    def _apply_imports(self, resources: Dict[str, Any], purchases: Dict[str, float], outcome: OutcomeReport) -> None:
+        added_parts: List[str] = []
+        for name, amount in purchases.items():
+            if amount > 0:
+                record_import(resources, name, float(amount))
+                added_parts.append(f"+{amount:.1f} {name}")
+        if added_parts:
+            record(outcome, "direct_effects", "Emergency imports added " + ", ".join(added_parts) + ".")
+        else:
+            record(outcome, "direct_effects", "No emergency resource imports were purchased this turn.")
+
+    def _apply_start_snapshot(self, resources: Dict[str, Any], outcome: OutcomeReport) -> None:
+        for name, record_data in resources.items():
+            record_data["start"] = record_data["stock"]
+            outcome["resource_flow_projection"][name] = {"start": record_data["stock"]}
+
+    def _allocate_by_priority(
+        self,
+        resources: Dict[str, Any],
+        context: Dict[str, Any],
+        priority: str,
+        outcome: OutcomeReport,
+    ) -> Dict[str, Any]:
+        profile = context["allocation_profiles"].get(priority, context["allocation_profiles"]["balance_services"])
+        allocation_snapshot: Dict[str, Any] = {"priority": priority}
+
+        workforce_available = context["workforce_available"]
+        set_stock(resources, "workforce_capacity", workforce_available)
+        resources["workforce_capacity"]["start"] = workforce_available
+        for target, share in profile["workforce"].items():
+            amount = workforce_available * share
+            allocated = allocate(resources, "workforce_capacity", target, amount)
+            allocation_snapshot[f"workforce_{target}"] = allocated
+
+        energy_available = stock(resources, "energy")
+        for target, share in profile["energy"].items():
+            allocated = allocate(resources, "energy", target, energy_available * share)
+            allocation_snapshot[f"energy_{target}"] = allocated
+
+        materials_available = stock(resources, "materials")
+        for target, share in profile["materials"].items():
+            allocated = allocate(resources, "materials", target, materials_available * share)
+            allocation_snapshot[f"materials_{target}"] = allocated
+
+        record(outcome, "modifier_effects", f"Resource priority for this turn: {priority.replace('_', ' ')}.")
+        return allocation_snapshot
+
+    def _constraint(self, resources: Dict[str, Any], name: str, text: str, constraint_log: List[str]) -> None:
+        resources[name]["constraint"] = text
+        constraint_log.append(text)
+
+    def _run_logistics(
+        self,
+        new_state: State,
+        context: Dict[str, Any],
+        allocation_priority: str,
+        outcome: OutcomeReport,
+    ) -> Tuple[Dict[str, Any], Dict[str, bool], List[str]]:
         resources = new_state["resources"]
         population = new_state["population"]
         economy = new_state["economy"]
-        infrastructure = new_state["infrastructure"]
-        constants = self.scenario["constants"]
-
-        outcome["base_projection"] = {
-            "water": {"start": resources["water"]},
-            "energy": {"start": resources["energy"]},
-            "food": {"start": resources["food"]},
-            "budget": {"start": economy["budget"]},
-        }
+        constants = context["constants"]
+        conversion = context["conversion_rates"]
+        base_production = context["base_production"]
+        modifier_context = context["modifier_context"]
+        constraint_log: List[str] = []
         recovery_flags = {
             "energy_recovery": False,
             "water_recovery": False,
@@ -471,205 +571,132 @@ class SimulationEngine:
             "income_recovery": False,
         }
 
-        if resources["energy"] <= 0:
-            resources["energy"] += constants["base_energy_recovery"]
-            recovery_flags["energy_recovery"] = True
-            record(
-                outcome,
-                "recovery_effects",
-                f"Base grid recovery restored {constants['base_energy_recovery']:.1f} energy before purchases.",
-            )
+        allocation_snapshot = self._allocate_by_priority(resources, context, allocation_priority, outcome)
+        new_state["telemetry"]["turn_allocation_snapshot"] = allocation_snapshot
 
-        context = self.build_context(new_state)
-        allocation = actions.get("emergency_allocation", {})
-        total_cost = float(allocation.get("total_cost", 0.0))
-        procurement_penalty = (
-            constants["procurement_penalty"]
-            if economy["budget"] < constants["energy_procurement_threshold"]
-            else 0.0
+        workforce_energy = resources["workforce_capacity"]["allocated"].get("energy", 0.0)
+        desired_energy = min(
+            base_production["energy"] * max(0.5, context["grid_efficiency"]),
+            workforce_energy * conversion["workforce_to_energy_ratio"],
         )
-        purchased_energy, capped_amount = capped_energy_purchase(
-            float(allocation.get("energy_amount", 0.0)),
-            self.scenario["available_emergency_budget"],
-            self.scenario["unit_costs"]["energy"],
-            procurement_penalty,
+        fuel_needed = desired_energy / max(conversion["fuel_to_energy_ratio"], 1e-9)
+        available_fuel = stock(resources, "fuel")
+        fuel_used = min(available_fuel, fuel_needed)
+        if fuel_used < fuel_needed:
+            self._constraint(resources, "energy", "Power generation was limited by low fuel.", constraint_log)
+        actual_energy = min(desired_energy, fuel_used * conversion["fuel_to_energy_ratio"])
+        allocate(resources, "fuel", "generation", fuel_used)
+        record_production(resources, "energy", actual_energy)
+
+        workforce_water = resources["workforce_capacity"]["allocated"].get("water", 0.0)
+        materials_water = resources["materials"]["allocated"].get("water", 0.0)
+        pump_energy = resources["energy"]["allocated"].get("pumps", 0.0)
+        water_capacity = base_production["water"] * context["water_capacity_multiplier"]
+        pump_supply = pump_energy * (conversion["energy_to_water_ratio"] + modifier_context["pump_efficiency_bonus"])
+        water_material_support = materials_water * conversion["materials_to_repair_ratio"]
+        workforce_water_cap = workforce_water * conversion["workforce_to_water_ratio"]
+        actual_water = min(water_capacity + water_material_support, pump_supply, workforce_water_cap)
+        if actual_water < water_capacity:
+            self._constraint(resources, "water", "Water delivery was limited by pump power, repair materials, or workforce.", constraint_log)
+        record_production(resources, "water", actual_water)
+
+        workforce_food = resources["workforce_capacity"]["allocated"].get("food", 0.0)
+        energy_food = resources["energy"]["allocated"].get("food", 0.0)
+        irrigation_water = min(stock(resources, "water"), actual_water * conversion["water_to_food_ratio"])
+        food_capacity = base_production["food"] * max(0.5, context["food_yield"])
+        workforce_food_cap = workforce_food * conversion["workforce_to_food_ratio"]
+        energy_food_cap = energy_food * conversion["energy_to_food_ratio"]
+        water_food_cap = irrigation_water * conversion["water_to_food_ratio"]
+        actual_food = min(food_capacity, workforce_food_cap, energy_food_cap, water_food_cap)
+        if actual_food < food_capacity:
+            self._constraint(resources, "food", "Food production was limited by water, power, or workforce.", constraint_log)
+        used_water_for_food = min(stock(resources, "water"), actual_food / max(conversion["water_to_food_ratio"], 1e-9))
+        allocate(resources, "water", "food_production", used_water_for_food)
+        record_production(resources, "food", actual_food)
+
+        civic_energy = resources["energy"]["allocated"].get("civic", 0.0)
+        service_need = max(0.0, context["effective_energy_demand"] - civic_energy)
+        additional_energy_use = min(stock(resources, "energy"), service_need)
+        allocate(resources, "energy", "service_demand", additional_energy_use)
+        energy_service_gap = max(0.0, service_need - additional_energy_use)
+        if energy_service_gap > 0:
+            constraint_log.append(f"The town was short {energy_service_gap:.1f} energy for full service demand.")
+
+        allocate(resources, "water", "households", min(stock(resources, "water"), constants["water_consumption"]))
+        allocate(resources, "food", "households", min(stock(resources, "food"), constants["food_consumption"]))
+        materials_upkeep = min(stock(resources, "materials"), constants["materials_maintenance_cost"])
+        allocate(resources, "materials", "maintenance", materials_upkeep)
+
+        water_leakage = stock(resources, "water") * max(
+            0.0,
+            constants["water_leakage_rate"] * (1.0 + modifier_context["water_leakage_multiplier"] - materials_upkeep * 0.02),
         )
-        resources["energy"] += purchased_energy
-        resources["water"] += float(allocation.get("water_amount", 0.0))
-        resources["food"] += float(allocation.get("food_amount", 0.0))
-        direct_adjustment = -total_cost
-        record(
-            outcome,
-            "direct_effects",
-            f"Emergency budget purchased +{purchased_energy:.1f} energy, +{allocation.get('water_amount', 0.0):.1f} water, and +{allocation.get('food_amount', 0.0):.1f} food.",
+        if water_leakage > 0:
+            lost = record_loss(resources, "water", water_leakage)
+            if lost > 0:
+                record(outcome, "dependency_effects", f"Water leakage drained {lost:.1f} water.")
+        food_spoilage = stock(resources, "food") * max(
+            0.0,
+            constants["food_spoilage_rate"] * (1.0 + modifier_context["food_spoilage_multiplier"]),
         )
-        if capped_amount > 0:
-            record(
-                outcome,
-                "economy_effects",
-                f"Energy procurement constraints reduced the requested purchase by {capped_amount:.1f} units.",
-            )
-            outcome["modifier_projection"]["energy_procurement_cap"] = {"capped_amount": capped_amount}
-
-        selected_policy_id = actions.get("selected_policy_id")
-        if selected_policy_id:
-            policy = self.policy_map[selected_policy_id]
-            can_use, reason = can_select_policy(new_state, policy)
-            if can_use:
-                activate_policy(new_state, policy)
-                direct_adjustment -= float(policy.get("cost", 0.0))
-                for path, delta in policy.get("instant_effects", {}).items():
-                    head, key = path.split(".")
-                    new_state[head][key] += delta
-                record(
-                    outcome,
-                    "modifier_effects",
-                    f"Selected policy {selected_policy_id} for ${policy['cost']:.2f}.",
-                )
-            elif not forecast_mode:
-                record(outcome, "modifier_effects", reason)
-
-        modifier_context = aggregate_modifier_context(new_state)
-        context = self.build_context(new_state)
-        effective_demand = context["effective_energy_demand"]
-        if modifier_context["energy_demand_multiplier"] != 0.0:
-            record(
-                outcome,
-                "modifier_effects",
-                f"Active grid modifiers changed effective energy demand to {effective_demand:.1f}.",
-            )
-
-        resources["energy"] = max(0.0, resources["energy"] - effective_demand)
-        resources["water"] = max(0.0, resources["water"] - constants["water_consumption"])
-        resources["food"] = max(0.0, resources["food"] - constants["food_consumption"])
-        outcome["base_projection"]["energy"]["after_consumption"] = resources["energy"]
-        outcome["base_projection"]["water"]["after_consumption"] = resources["water"]
-        outcome["base_projection"]["food"]["after_consumption"] = resources["food"]
-
-        expenses_for_turn = economy["expenses"] + economy.get("service_penalty", 0.0)
-        new_budget, net = update_budget(
-            economy["budget"],
-            economy["income"],
-            expenses_for_turn,
-            direct_adjustment,
+        if food_spoilage > 0:
+            lost = record_loss(resources, "food", food_spoilage)
+            if lost > 0:
+                record(outcome, "dependency_effects", f"Food spoilage wasted {lost:.1f} food.")
+        materials_loss = stock(resources, "materials") * max(
+            0.0,
+            constants["materials_loss_rate"] * (1.0 + modifier_context["materials_loss_multiplier"]),
         )
-        economy["budget"] = new_budget
-        outcome["base_projection"]["budget"]["after_operations"] = economy["budget"]
-        record(
-            outcome,
-            "economy_effects",
-            f"Operations and purchases changed the budget by {net:+.2f}, leaving ${economy['budget']:.2f}.",
-        )
+        if materials_loss > 0:
+            record_loss(resources, "materials", materials_loss)
 
-        pump_penalty = effective_water_penalty(
-            constants["energy_to_water_penalty"],
-            modifier_context["energy_to_water_multiplier"],
-        )
-        if resources["energy"] < context["pump_threshold"]:
-            resources["water"] = max(0.0, resources["water"] - pump_penalty)
-            record(
-                outcome,
-                "dependency_effects",
-                f"Energy fell below the pump threshold, reducing water by {pump_penalty:.1f}.",
-            )
-        else:
-            record(
-                outcome,
-                "dependency_effects",
-                "Energy remained above the pump threshold, so the water pumping penalty did not trigger.",
-            )
-        outcome["propagated_projection"]["water"] = {"after_dependencies": resources["water"]}
+        for name, record_data in resources.items():
+            cap_bonus = modifier_context["storage_capacity_bonus"] if name in {"water", "food", "fuel"} else 0.0
+            effective_capacity = record_data["capacity"] * (1.0 + cap_bonus)
+            if record_data["stock"] > effective_capacity:
+                overflow = record_data["stock"] - effective_capacity
+                record_loss(resources, name, overflow)
+                constraint_log.append(f"{name.title()} overflow caused {overflow:.1f} waste.")
 
-        if resources["water"] < context["irrigation_threshold"]:
-            resources["food"] = max(0.0, resources["food"] - constants["water_to_food_penalty"])
-            record(
-                outcome,
-                "dependency_effects",
-                f"Water fell below the irrigation threshold, reducing food by {constants['water_to_food_penalty']:.1f}.",
-            )
-        else:
-            record(
-                outcome,
-                "dependency_effects",
-                "Water stayed above the irrigation threshold, preventing an extra food penalty.",
-            )
-        outcome["propagated_projection"]["food"] = {"after_dependencies": resources["food"]}
-
-        if context["food_yield"] > 1.0:
-            bonus = food_output_bonus(constants["food_consumption"], context["food_yield"])
-            resources["food"] += bonus
-            infrastructure["food_yield"] = context["food_yield"]
-            record(
-                outcome,
-                "modifier_effects",
-                f"Persistent yield improvements added {bonus:.1f} food after dependency checks.",
-            )
-            outcome["modifier_projection"]["food"] = {"after_modifiers": resources["food"]}
-
-        if resources["food"] < constants["food_security_threshold"]:
+        unmet_water = max(0.0, constants["water_consumption"] - resources["water"]["allocated"].get("households", 0.0))
+        unmet_food = max(0.0, constants["food_consumption"] - resources["food"]["allocated"].get("households", 0.0))
+        if unmet_water > 0:
+            population["health"] = clamp(population["health"] - constants["water_health_penalty"])
+            population["happiness"] = clamp(population["happiness"] - 0.05)
+            record(outcome, "population_effects", f"Water shortages reduced health by {constants['water_health_penalty']:.2f}.")
+        if unmet_food > 0:
             population["health"] = clamp(population["health"] - constants["food_to_health_penalty"])
             population["happiness"] = clamp(population["happiness"] - 0.05)
-            record(
-                outcome,
-                "population_effects",
-                f"Food insecurity reduced health by {constants['food_to_health_penalty']:.2f}.",
-            )
-        elif resources["food"] > constants["food_security_threshold"]:
+            record(outcome, "population_effects", f"Food insecurity reduced health by {constants['food_to_health_penalty']:.2f}.")
+        if energy_service_gap > 0:
+            population["happiness"] = clamp(population["happiness"] - 0.04)
+            record(outcome, "dependency_effects", "Power shortages disrupted services across town.")
+        elif stock(resources, "energy") > constants["energy_recovery_surplus_threshold"]:
+            recovery_flags["energy_recovery"] = True
+            water_bonus = constants["water_recovery_bonus"]
+            record_production(resources, "water", water_bonus)
+            record(outcome, "recovery_effects", f"Energy surplus improved pumping efficiency, restoring +{water_bonus:.1f} water.")
+
+        if stock(resources, "water") > context["irrigation_threshold"]:
+            recovery_flags["water_recovery"] = True
+            food_bonus = constants["food_recovery_bonus"]
+            record_production(resources, "food", food_bonus)
+            record(outcome, "recovery_effects", f"Healthy water reserves improved agriculture, restoring +{food_bonus:.1f} food.")
+
+        if stock(resources, "food") > constants["food_security_threshold"]:
             updated = recover_health(population, constants["health_recovery_bonus"])
             population["health"] = updated["health"]
-            recovery_flags["population_recovery"] = True
-            record(
-                outcome,
-                "recovery_effects",
-                f"Food security supported a modest health recovery of +{constants['health_recovery_bonus']:.2f}.",
-            )
+            recovery_flags["food_recovery"] = True
+            record(outcome, "recovery_effects", f"Food security supported a modest health recovery of +{constants['health_recovery_bonus']:.2f}.")
 
         if population["happiness"] < 0.55:
             updated = apply_unrest(population, constants["happiness_to_unrest_penalty"])
             population["unrest"] = updated["unrest"]
-            record(
-                outcome,
-                "population_effects",
-                f"Low happiness increased unrest by {constants['happiness_to_unrest_penalty']:.2f}.",
-            )
+            record(outcome, "population_effects", f"Low happiness increased unrest by {constants['happiness_to_unrest_penalty']:.2f}.")
         elif population["unrest"] > 0.0:
             population["unrest"] = clamp(population["unrest"] - 0.05)
             recovery_flags["population_recovery"] = True
-            record(
-                outcome,
-                "recovery_effects",
-                "Steadier conditions reduced unrest by 0.05.",
-            )
-
-        water_bonus = water_recovery_bonus(
-            resources["energy"],
-            constants["energy_recovery_surplus_threshold"],
-            constants["water_recovery_bonus"],
-        )
-        if water_bonus > 0:
-            resources["water"] += water_bonus
-            recovery_flags["water_recovery"] = True
-            record(
-                outcome,
-                "recovery_effects",
-                f"Energy surplus improved pumping efficiency, restoring +{water_bonus:.1f} water.",
-            )
-
-        food_bonus = food_recovery_bonus(
-            resources["water"],
-            context["irrigation_threshold"],
-            constants["food_recovery_bonus"],
-        )
-        if food_bonus > 0:
-            resources["food"] += food_bonus
-            recovery_flags["food_recovery"] = True
-            record(
-                outcome,
-                "recovery_effects",
-                f"Healthy water reserves improved agriculture, restoring +{food_bonus:.1f} food.",
-            )
-        outcome["recovery_projection"]["water"] = {"after_recovery": resources["water"]}
-        outcome["recovery_projection"]["food"] = {"after_recovery": resources["food"]}
+            record(outcome, "recovery_effects", "Steadier conditions reduced unrest by 0.05.")
 
         economy["income"] = compute_effective_income(
             economy["base_income"],
@@ -677,49 +704,114 @@ class SimulationEngine:
             population["unrest"],
             economy["tax_base"],
         )
-        if (
-            population["health"] < constants["labor_threshold"]
-            or population["unrest"] > constants["unrest_threshold"]
-        ):
-            economy["income"] = max(
-                0.0, economy["income"] - constants["health_to_income_penalty"]
-            )
-            record(
-                outcome,
-                "economy_effects",
-                f"Population stress reduced next-turn income by ${constants['health_to_income_penalty']:.2f}.",
-            )
-        elif population["health"] >= constants["labor_threshold"] and population["unrest"] <= constants["unrest_threshold"]:
+        if population["health"] < constants["labor_threshold"] or population["unrest"] > constants["unrest_threshold"]:
+            economy["income"] = max(0.0, economy["income"] - constants["health_to_income_penalty"])
+            record(outcome, "economy_effects", f"Population stress reduced next-turn income by ${constants['health_to_income_penalty']:.2f}.")
+        else:
             economy["income"] += constants["income_recovery_bonus"]
             recovery_flags["income_recovery"] = True
-            record(
-                outcome,
-                "recovery_effects",
-                f"Stable health and unrest improved revenue by +${constants['income_recovery_bonus']:.2f}.",
-            )
+            record(outcome, "recovery_effects", f"Stable health and unrest improved revenue by +${constants['income_recovery_bonus']:.2f}.")
 
         if population["unrest"] > constants["unrest_threshold"]:
             economy["service_penalty"] = constants["unrest_to_budget_penalty"]
-            record(
-                outcome,
-                "economy_effects",
-                f"Unrest added a ${constants['unrest_to_budget_penalty']:.2f} service penalty for the next turn.",
-            )
+            record(outcome, "economy_effects", f"Unrest added a ${constants['unrest_to_budget_penalty']:.2f} service penalty for the next turn.")
         else:
-            if economy["service_penalty"] > 0:
-                record(
-                    outcome,
-                    "recovery_effects",
-                    "Lower unrest cleared the service penalty for the next turn.",
-                )
             economy["service_penalty"] = 0.0
 
+        return allocation_snapshot, recovery_flags, constraint_log
+
+    def simulate_turn(self, state: State, actions: Actions, forecast_mode: bool = False) -> Tuple[State, OutcomeReport]:
+        new_state = self.clone_state(state)
+        ensure_modifier_containers(new_state)
+        outcome = empty_outcome()
+        resources = new_state["resources"]
+        population = new_state["population"]
+        economy = new_state["economy"]
+        constants = self.scenario["constants"]
+
+        reset_turn_metrics(resources)
+        self._apply_start_snapshot(resources, outcome)
         previous_risk_values = dict(new_state["telemetry"].get("last_risk_values", {}))
+
+        if stock(resources, "energy") <= 0:
+            record_import(resources, "energy", constants["base_energy_recovery"])
+            record(outcome, "recovery_effects", f"Base grid recovery restored {constants['base_energy_recovery']:.1f} energy before planning.")
+
+        context = self.build_context(new_state)
+        resource_purchases = actions.get("resource_purchases")
+        if resource_purchases is None:
+            legacy = actions.get("emergency_allocation", {})
+            resource_purchases = {
+                "energy": float(legacy.get("energy_amount", 0.0)),
+                "water": float(legacy.get("water_amount", 0.0)),
+                "food": float(legacy.get("food_amount", 0.0)),
+                "fuel": 0.0,
+                "materials": 0.0,
+            }
+        risk_basis = new_state["telemetry"].get("last_risk_ranking") or [
+            {"issue_id": "energy_instability"},
+            {"issue_id": "water_shortage"},
+            {"issue_id": "food_collapse"},
+        ]
+        _, total_cost = validate_allocation(resource_purchases, self.scenario, risk_basis)
+        self._apply_imports(resources, resource_purchases, outcome)
+        direct_adjustment = -total_cost
+        direct_adjustment = self._apply_policy(new_state, actions.get("selected_policy_id"), outcome, direct_adjustment, forecast_mode)
+
+        context = self.build_context(new_state)
+        allocation_priority = actions.get("allocation_priority", "balance_services")
+        allocation_snapshot, recovery_flags, constraint_log = self._run_logistics(
+            new_state,
+            context,
+            allocation_priority,
+            outcome,
+        )
+
+        expenses_for_turn = economy["expenses"] + economy.get("service_penalty", 0.0)
+        new_budget, net = update_budget(economy["budget"], economy["income"], expenses_for_turn, direct_adjustment)
+        economy["budget"] = new_budget
+        record(outcome, "economy_effects", f"Operations and imports changed the budget by {net:+.2f}, leaving ${economy['budget']:.2f}.")
+
+        outcome["base_projection"]["budget"] = {"start": state["economy"]["budget"], "after_operations": economy["budget"]}
+        outcome["resource_flow_projection"]["budget"] = {
+            "start": state["economy"]["budget"],
+            "projected_consumption": expenses_for_turn,
+            "projected_imports": -direct_adjustment,
+            "projected_end": economy["budget"],
+            "primary_constraint": "budget strain" if economy["budget"] < constants["safe_budget_threshold"] else "none",
+        }
+
+        ledger = end_of_turn_ledger(resources)
+        new_state["telemetry"]["turn_resource_ledger"] = ledger
+        history = list(new_state["telemetry"].get("resource_flow_history", []))
+        history.append({"turn": new_state["telemetry"].get("turn", 1), "ledger": ledger})
+        new_state["telemetry"]["resource_flow_history"] = history[-8:]
+        new_state["telemetry"]["turn_constraint_log"] = list(constraint_log)
+        new_state["telemetry"]["turn_allocation_snapshot"] = allocation_snapshot
+        outcome["constraint_preview"] = constraint_log
+
+        for name, entry in ledger.items():
+            outcome["resource_flow_projection"].setdefault(name, {})
+            outcome["resource_flow_projection"][name].update(
+                {
+                    "projected_production": entry["produced"],
+                    "projected_imports": entry["imported"],
+                    "projected_consumption": entry["consumed"],
+                    "projected_losses": entry["lost"],
+                    "projected_end": entry["end"],
+                    "primary_constraint": entry["constraint"] or "none",
+                }
+            )
+            if entry["constraint"]:
+                record(outcome, "dependency_effects", entry["constraint"])
+
         risk_ranking = compute_risk_ranking(
             new_state,
             context,
             outcome["outcome_chain"],
             recovery_flags,
+            ledger,
+            constraint_log,
         )
         current_risk_values = {risk["issue_id"]: risk["severity"] for risk in risk_ranking}
         new_state["telemetry"]["last_risk_ranking"] = risk_ranking
@@ -732,19 +824,16 @@ class SimulationEngine:
             for risk in risk_ranking[:3]
         ]
 
-        epsilon = 1e-6
         stable = (
-            resources["energy"] + epsilon >= constants["safe_energy_threshold"]
-            and resources["water"] + epsilon >= constants["safe_water_threshold"]
-            and resources["food"] + epsilon >= constants["safe_food_threshold"]
-            and population["health"] + epsilon >= constants["safe_health_threshold"]
-            and economy["budget"] + epsilon >= constants["safe_budget_threshold"]
+            stock(resources, "energy") >= constants["safe_energy_threshold"]
+            and stock(resources, "water") >= constants["safe_water_threshold"]
+            and stock(resources, "food") >= constants["safe_food_threshold"]
+            and population["health"] >= constants["safe_health_threshold"]
+            and economy["budget"] >= constants["safe_budget_threshold"]
         )
-        if stable:
-            new_state["telemetry"]["stable_turn_streak"] = new_state["telemetry"].get("stable_turn_streak", 0) + 1
-        else:
-            new_state["telemetry"]["stable_turn_streak"] = 0
-
+        new_state["telemetry"]["stable_turn_streak"] = (
+            new_state["telemetry"].get("stable_turn_streak", 0) + 1 if stable else 0
+        )
         decrement_temporary_effects(new_state)
         return new_state, outcome
 
@@ -760,21 +849,20 @@ class SimulationEngine:
             "risk_changes",
             "remaining_risks",
         ]:
-            title = heading.replace("_", " ").title()
-            print(f"{title}:")
+            print(f"{heading.replace('_', ' ').title()}:")
             lines = outcome_report.get(heading, [])
-            if not lines:
-                print("- none")
-            else:
+            if lines:
                 for line in lines:
                     print(f"- {line}")
+            else:
+                print("- none")
 
     def evaluate_end_state(self, turn: int) -> bool:
         resources = self.state["resources"]
         population = self.state["population"]
         economy = self.state["economy"]
         constants = self.scenario["constants"]
-        if resources["water"] <= 0 or resources["food"] <= 0:
+        if stock(resources, "water") <= 0 or stock(resources, "food") <= 0:
             print("\nCritical resources have collapsed. The town fails.")
             return False
         if population["health"] <= 0.3:
@@ -787,16 +875,13 @@ class SimulationEngine:
             print("\nYou held all major systems above the safety thresholds long enough to stabilize the town.")
             return False
         if turn == self.turns:
-            if all(self.skills_used.values()):
-                print("\nThe forecast window ended with every skill used, but the town is not fully stabilized yet.")
-            else:
-                print("\nThe slice ended, but not every skill was applied successfully.")
+            print("\nThe forecast window ended.")
             return False
         return True
 
     def run(self) -> None:
         print("Welcome to the Town Recovery Simulation!")
-        print("Each turn, study the coupled forecast, interpret the report, then act under constraints.")
+        print("Each turn, study the coupled forecast, interpret the report, then act under logistics constraints.")
         for turn in range(1, self.turns + 1):
             print(f"\n--- Turn {turn} ---")
             self.observe_state()

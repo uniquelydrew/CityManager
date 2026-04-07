@@ -6,9 +6,7 @@
       "kind": "temporary_response",
       "cost": 150.0,
       "stacking_mode": "add",
-      "instant_effects": {
-        "resources.water": 25.0
-      },
+      "instant_effects": {"resources.water": 25.0},
       "duration_turns": 1,
       "persistent_effects": {}
     },
@@ -18,9 +16,7 @@
       "kind": "temporary_response",
       "cost": 150.0,
       "stacking_mode": "add",
-      "instant_effects": {
-        "resources.energy": 20.0
-      },
+      "instant_effects": {"resources.fuel": 20.0},
       "duration_turns": 1,
       "persistent_effects": {}
     },
@@ -30,15 +26,64 @@
       "kind": "temporary_response",
       "cost": 150.0,
       "stacking_mode": "add",
-      "instant_effects": {
-        "resources.food": 18.0
-      },
+      "instant_effects": {"resources.food": 18.0},
       "duration_turns": 1,
       "persistent_effects": {}
     },
     {
-      "policy_id": "pump_repair_program",
+      "policy_id": "fuel_contract",
       "label": "D",
+      "kind": "persistent_infrastructure",
+      "cost": 220.0,
+      "stacking_mode": "unique",
+      "instant_effects": {},
+      "duration_turns": null,
+      "persistent_effects": {
+        "resource_limits.fuel_import_bonus": 10.0,
+        "resource_costs.fuel_cost_multiplier": -0.15
+      }
+    },
+    {
+      "policy_id": "maintenance_depot",
+      "label": "E",
+      "kind": "persistent_infrastructure",
+      "cost": 240.0,
+      "stacking_mode": "unique",
+      "instant_effects": {},
+      "duration_turns": null,
+      "persistent_effects": {
+        "rule_overrides.water_leakage_multiplier": -0.35,
+        "rule_overrides.materials_loss_multiplier": -0.30
+      }
+    },
+    {
+      "policy_id": "workforce_training",
+      "label": "F",
+      "kind": "persistent_infrastructure",
+      "cost": 210.0,
+      "stacking_mode": "unique",
+      "instant_effects": {},
+      "duration_turns": null,
+      "persistent_effects": {
+        "rule_overrides.workforce_recovery_bonus": 0.2
+      }
+    },
+    {
+      "policy_id": "cold_storage_upgrade",
+      "label": "G",
+      "kind": "persistent_infrastructure",
+      "cost": 230.0,
+      "stacking_mode": "unique",
+      "instant_effects": {},
+      "duration_turns": null,
+      "persistent_effects": {
+        "rule_overrides.food_spoilage_multiplier": -0.4,
+        "resource_limits.storage_capacity_bonus": 0.1
+      }
+    },
+    {
+      "policy_id": "pipe_replacement_program",
+      "label": "H",
       "kind": "persistent_infrastructure",
       "cost": 250.0,
       "stacking_mode": "unique",
@@ -46,12 +91,12 @@
       "duration_turns": null,
       "persistent_effects": {
         "infrastructure.water_capacity": 0.15,
-        "rule_overrides.energy_to_water_multiplier": -0.25
+        "rule_overrides.water_leakage_multiplier": -0.25
       }
     },
     {
-      "policy_id": "grid_maintenance",
-      "label": "E",
+      "policy_id": "substation_upgrade",
+      "label": "I",
       "kind": "persistent_infrastructure",
       "cost": 250.0,
       "stacking_mode": "unique",
@@ -59,20 +104,8 @@
       "duration_turns": null,
       "persistent_effects": {
         "infrastructure.grid_efficiency": 0.15,
+        "rule_overrides.pump_efficiency_bonus": 0.2,
         "rule_overrides.energy_demand_multiplier": -0.1
-      }
-    },
-    {
-      "policy_id": "irrigation_upgrade",
-      "label": "F",
-      "kind": "persistent_infrastructure",
-      "cost": 250.0,
-      "stacking_mode": "unique",
-      "instant_effects": {},
-      "duration_turns": null,
-      "persistent_effects": {
-        "infrastructure.food_yield": 0.2,
-        "rule_overrides.irrigation_threshold_multiplier": -0.15
       }
     }
   ]

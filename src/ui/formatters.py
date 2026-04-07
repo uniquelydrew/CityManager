@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
+from src.resource_utils import stock
 
 PLAYER_RISK_LABELS = {
-    "energy_instability": "Power shortage risk",
+    "energy_instability": "Power generation risk",
     "budget_erosion": "Budget under strain",
     "food_collapse": "Food supply risk",
-    "water_shortage": "Water shortage risk",
-    "unrest_spike": "Community unrest risk",
+    "water_shortage": "Water delivery risk",
+    "unrest_spike": "Workforce strain risk",
 }
 
 
@@ -58,9 +59,9 @@ def threshold_snapshot(forecast: Dict[str, Any]) -> Dict[str, float]:
 def state_status_snapshot(state: Dict[str, Any], forecast: Dict[str, Any]) -> Dict[str, str]:
     thresholds = threshold_snapshot(forecast)
     return {
-        "water": resource_status(float(state["resources"]["water"]), thresholds["water"]),
-        "energy": resource_status(float(state["resources"]["energy"]), thresholds["energy"]),
-        "food": resource_status(float(state["resources"]["food"]), thresholds["food"]),
+        "water": resource_status(stock(state["resources"], "water"), thresholds["water"]),
+        "energy": resource_status(stock(state["resources"], "energy"), thresholds["energy"]),
+        "food": resource_status(stock(state["resources"], "food"), thresholds["food"]),
         "health": resource_status(float(state["population"]["health"] * 100.0), thresholds["health"]),
         "budget": budget_status(float(state["economy"]["budget"]), thresholds["budget"]),
     }
@@ -79,9 +80,9 @@ def consequence_sentence(forecast: Dict[str, Any]) -> str:
         return "If nothing changes, the town should stay steady next turn."
     issue_id = top["issue_id"]
     if issue_id == "energy_instability":
-        return "If power drops too low, water pumps may fail next turn."
+        return "If fuel or power runs short, water pumps and town services may fail next turn."
     if issue_id == "water_shortage":
-        return "If water runs low, food production may also fall."
+        return "If water delivery falls, food production and public health may also drop."
     if issue_id == "food_collapse":
         return "If food runs low, town health may get worse."
     if issue_id == "budget_erosion":
@@ -97,9 +98,9 @@ def recommendation_sentence(forecast: Dict[str, Any]) -> str:
         return "You can keep supplies balanced and avoid overspending."
     issue_id = top["issue_id"]
     if issue_id == "energy_instability":
-        return "Try buying emergency energy first to protect water service."
+        return "Try buying emergency energy or fuel first to protect water service."
     if issue_id == "water_shortage":
-        return "Try buying emergency water or protecting energy so pumps can keep running."
+        return "Try buying emergency water or materials so pumps and pipes can keep running."
     if issue_id == "food_collapse":
         return "Try buying emergency food and keeping water above the warning line."
     if issue_id == "budget_erosion":
@@ -111,10 +112,10 @@ def recommendation_sentence(forecast: Dict[str, Any]) -> str:
 
 def system_links(forecast: Dict[str, Any]) -> List[str]:
     links = [
-        "Power affects water pumps.",
-        "Water affects food supply.",
-        "Food affects health.",
-        "Health and unrest affect town income.",
+        "Fuel and workers affect power generation.",
+        "Power and materials affect water delivery.",
+        "Water, power, and workers affect food supply.",
+        "Health and unrest affect workforce and town income.",
     ]
     top = top_risk(forecast)
     if top and top["issue_id"] == "budget_erosion":
@@ -123,6 +124,9 @@ def system_links(forecast: Dict[str, Any]) -> List[str]:
 
 
 def _resource_after_value(forecast: Dict[str, Any], key: str) -> float | None:
+    resource_flow = forecast.get("resource_flow_projection", {}).get(key, {})
+    if resource_flow:
+        return resource_flow.get("projected_end", resource_flow.get("start"))
     base = forecast.get("base_projection", {}).get(key, {})
     if key == "budget":
         return base.get("after_operations", base.get("start"))
@@ -140,13 +144,13 @@ def outlook_lines(forecast: Dict[str, Any]) -> List[str]:
     thresholds = threshold_snapshot(forecast)
     lines: List[str] = []
     for key in ["energy", "water", "food"]:
-        start = forecast.get("base_projection", {}).get(key, {}).get("start")
+        start = forecast.get("resource_flow_projection", {}).get(key, {}).get("start")
         end = _resource_after_value(forecast, key)
         if start is None or end is None:
             continue
         status = resource_status(float(end), thresholds[key])
         lines.append(f"{key.title()}: {start:.1f} -> {end:.1f} | {status}")
-    budget_start = forecast.get("base_projection", {}).get("budget", {}).get("start")
+    budget_start = forecast.get("resource_flow_projection", {}).get("budget", {}).get("start")
     budget_end = _resource_after_value(forecast, "budget")
     if budget_start is not None and budget_end is not None:
         status = budget_status(float(budget_end), thresholds["budget"])
@@ -164,6 +168,39 @@ def top_risk_cards(forecast: Dict[str, Any]) -> List[str]:
     return cards or ["No urgent problems are forecast right now."]
 
 
+def resource_flow_lines(forecast: Dict[str, Any]) -> List[str]:
+    lines: List[str] = []
+    for key in ["energy", "water", "food"]:
+        flow = forecast.get("resource_flow_projection", {}).get(key, {})
+        if not flow:
+            continue
+        lines.append(
+            f"{key.title()}: start {flow.get('start', 0):.1f}, "
+            f"+{flow.get('projected_production', 0):.1f} produced, "
+            f"+{flow.get('projected_imports', 0):.1f} imported, "
+            f"-{flow.get('projected_consumption', 0):.1f} used, "
+            f"-{flow.get('projected_losses', 0):.1f} lost, "
+            f"end {flow.get('projected_end', 0):.1f}"
+        )
+    return lines or ["No resource flow forecast is available."]
+
+
+def supply_change_lines(forecast: Dict[str, Any]) -> List[str]:
+    lines = list(forecast.get("constraint_preview", []))[:3]
+    if not lines:
+        lines = ["Supplies are not showing a major bottleneck right now."]
+    return lines
+
+
+def supporting_resource_lines(state: Dict[str, Any]) -> List[str]:
+    resources = state["resources"]
+    return [
+        f"Fuel: {stock(resources, 'fuel'):.0f}",
+        f"Materials: {stock(resources, 'materials'):.0f}",
+        f"Workforce: {stock(resources, 'workforce_capacity'):.0f}",
+    ]
+
+
 def improvement_lines(forecast: Dict[str, Any]) -> List[str]:
     top = top_risk(forecast)
     if not top:
@@ -171,13 +208,13 @@ def improvement_lines(forecast: Dict[str, Any]) -> List[str]:
     issue_id = top["issue_id"]
     if issue_id == "energy_instability":
         return [
-            "Buying emergency energy can help keep power above the danger line.",
+            "Buying emergency energy or fuel can help keep power above the danger line.",
             "Protecting power also helps protect water service.",
         ]
     if issue_id == "water_shortage":
         return [
             "Protecting energy can reduce water loss from pump trouble.",
-            "Emergency water can buy time while the pumps stay online.",
+            "Materials can also help reduce leaks and keep water moving.",
         ]
     if issue_id == "food_collapse":
         return [
@@ -223,15 +260,21 @@ def policy_summary(policy: Dict[str, Any]) -> str:
     if policy_id == "water_emergency_crews":
         return "Short-term help: adds emergency water this turn."
     if policy_id == "grid_fuel_delivery":
-        return "Short-term help: adds emergency energy this turn."
+        return "Short-term help: adds emergency fuel this turn."
     if policy_id == "food_relief_convoy":
         return "Short-term help: adds emergency food this turn."
-    if policy_id == "pump_repair_program":
-        return "Long-term help: improves water system reliability."
-    if policy_id == "grid_maintenance":
-        return "Long-term help: lowers future energy demand."
-    if policy_id == "irrigation_upgrade":
-        return "Long-term help: improves future food production."
+    if policy_id == "fuel_contract":
+        return "Long-term help: expands fuel access and lowers import cost."
+    if policy_id == "maintenance_depot":
+        return "Long-term help: reduces leakage and material loss."
+    if policy_id == "workforce_training":
+        return "Long-term help: improves workforce recovery."
+    if policy_id == "cold_storage_upgrade":
+        return "Long-term help: reduces food spoilage and improves storage."
+    if policy_id == "pipe_replacement_program":
+        return "Long-term help: improves water delivery capacity."
+    if policy_id == "substation_upgrade":
+        return "Long-term help: improves grid efficiency and pump support."
     return "Town policy support."
 
 
@@ -249,15 +292,20 @@ def tutor_turn_lines(result: Dict[str, Any]) -> List[str]:
     outcome = result.get("outcome", {})
     actions = result.get("actions", {})
     turn = state.get("telemetry", {}).get("turn", 1) - 1
-    allocation = actions.get("emergency_allocation", {})
+    allocation = actions.get("resource_purchases", actions.get("emergency_allocation", {}))
     selected_policy_id = actions.get("selected_policy_id")
+    priority = actions.get("allocation_priority")
     chosen = []
-    if allocation.get("energy_amount", 0) > 0:
+    if allocation.get("energy", allocation.get("energy_amount", 0)) > 0:
         chosen.append("emergency energy")
-    if allocation.get("water_amount", 0) > 0:
+    if allocation.get("water", allocation.get("water_amount", 0)) > 0:
         chosen.append("emergency water")
-    if allocation.get("food_amount", 0) > 0:
+    if allocation.get("food", allocation.get("food_amount", 0)) > 0:
         chosen.append("emergency food")
+    if allocation.get("fuel", 0) > 0:
+        chosen.append("emergency fuel")
+    if allocation.get("materials", 0) > 0:
+        chosen.append("emergency materials")
     dependency = outcome.get("dependency_effects", [])
     recovery = outcome.get("recovery_effects", [])
     remaining = outcome.get("remaining_risks", [])
@@ -274,6 +322,8 @@ def tutor_turn_lines(result: Dict[str, Any]) -> List[str]:
         lines.append("What you chose: You saved your emergency budget this turn.")
     if selected_policy_id:
         lines.append(f"Policy: You also chose {policy_title(selected_policy_id).lower()}.")
+    if priority:
+        lines.append(f"Priority: You focused on {priority.replace('_', ' ')}.")
     if dependency:
         lines.append("What changed: " + dependency[0])
     elif recovery:

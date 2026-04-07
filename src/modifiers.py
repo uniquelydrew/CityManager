@@ -74,6 +74,14 @@ def aggregate_modifier_context(state: Dict[str, Any]) -> Dict[str, float]:
         "water_capacity_bonus": 0.0,
         "grid_efficiency_bonus": 0.0,
         "food_yield_bonus": 0.0,
+        "fuel_import_bonus": 0.0,
+        "fuel_cost_multiplier": 0.0,
+        "water_leakage_multiplier": 0.0,
+        "food_spoilage_multiplier": 0.0,
+        "materials_loss_multiplier": 0.0,
+        "workforce_recovery_bonus": 0.0,
+        "pump_efficiency_bonus": 0.0,
+        "storage_capacity_bonus": 0.0,
     }
     for modifier in state["modifiers"]["persistent_effects"]:
         stat_deltas = modifier.get("stat_deltas", {})
@@ -88,6 +96,26 @@ def aggregate_modifier_context(state: Dict[str, Any]) -> Dict[str, float]:
         )
         context["irrigation_threshold_multiplier"] += stat_deltas.get(
             "rule_overrides.irrigation_threshold_multiplier", 0.0
+        )
+        context["fuel_import_bonus"] += stat_deltas.get("resource_limits.fuel_import_bonus", 0.0)
+        context["fuel_cost_multiplier"] += stat_deltas.get("resource_costs.fuel_cost_multiplier", 0.0)
+        context["water_leakage_multiplier"] += stat_deltas.get(
+            "rule_overrides.water_leakage_multiplier", 0.0
+        )
+        context["food_spoilage_multiplier"] += stat_deltas.get(
+            "rule_overrides.food_spoilage_multiplier", 0.0
+        )
+        context["materials_loss_multiplier"] += stat_deltas.get(
+            "rule_overrides.materials_loss_multiplier", 0.0
+        )
+        context["workforce_recovery_bonus"] += stat_deltas.get(
+            "rule_overrides.workforce_recovery_bonus", 0.0
+        )
+        context["pump_efficiency_bonus"] += stat_deltas.get(
+            "rule_overrides.pump_efficiency_bonus", 0.0
+        )
+        context["storage_capacity_bonus"] += stat_deltas.get(
+            "resource_limits.storage_capacity_bonus", 0.0
         )
     return context
 

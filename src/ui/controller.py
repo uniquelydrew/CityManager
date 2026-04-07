@@ -70,11 +70,22 @@ class UIController:
                     f"Cost: ${self.engine.scenario['unit_costs']['food']:.0f} per unit\n"
                     "Best first move for the current food risk."
                 )
+            if label == "energy_instability":
+                self.ui.action_panel.fuel_help.setText(
+                    f"Cost: ${self.engine.scenario['unit_costs']['fuel']:.0f} per unit\n"
+                    "Fuel helps generate more power next turn."
+                )
+            if label == "water_shortage":
+                self.ui.action_panel.materials_help.setText(
+                    f"Cost: ${self.engine.scenario['unit_costs']['materials']:.0f} per unit\n"
+                    "Materials help reduce leaks and keep water moving."
+                )
         self.ui.action_panel.prompt_label.setText(
             "Step 1: Read the urgent problem\n"
-            "Step 2: Choose emergency supplies\n"
-            "Step 3: Choose a policy if you want one\n"
-            "Step 4: Run the turn\n\n"
+            "Step 2: Choose emergency supplies and support resources\n"
+            "Step 3: Choose a service priority\n"
+            "Step 4: Choose a policy if you want one\n"
+            "Step 5: Run the turn\n\n"
             + recommendation_sentence(forecast)
         )
 
