@@ -1,0 +1,79 @@
+{
+  "policies": [
+    {
+      "policy_id": "water_emergency_crews",
+      "label": "A",
+      "kind": "temporary_response",
+      "cost": 150.0,
+      "stacking_mode": "add",
+      "instant_effects": {
+        "resources.water": 25.0
+      },
+      "duration_turns": 1,
+      "persistent_effects": {}
+    },
+    {
+      "policy_id": "grid_fuel_delivery",
+      "label": "B",
+      "kind": "temporary_response",
+      "cost": 150.0,
+      "stacking_mode": "add",
+      "instant_effects": {
+        "resources.energy": 20.0
+      },
+      "duration_turns": 1,
+      "persistent_effects": {}
+    },
+    {
+      "policy_id": "food_relief_convoy",
+      "label": "C",
+      "kind": "temporary_response",
+      "cost": 150.0,
+      "stacking_mode": "add",
+      "instant_effects": {
+        "resources.food": 18.0
+      },
+      "duration_turns": 1,
+      "persistent_effects": {}
+    },
+    {
+      "policy_id": "pump_repair_program",
+      "label": "D",
+      "kind": "persistent_infrastructure",
+      "cost": 250.0,
+      "stacking_mode": "unique",
+      "instant_effects": {},
+      "duration_turns": null,
+      "persistent_effects": {
+        "infrastructure.water_capacity": 0.15,
+        "rule_overrides.energy_to_water_multiplier": -0.25
+      }
+    },
+    {
+      "policy_id": "grid_maintenance",
+      "label": "E",
+      "kind": "persistent_infrastructure",
+      "cost": 250.0,
+      "stacking_mode": "unique",
+      "instant_effects": {},
+      "duration_turns": null,
+      "persistent_effects": {
+        "infrastructure.grid_efficiency": 0.15,
+        "rule_overrides.energy_demand_multiplier": -0.1
+      }
+    },
+    {
+      "policy_id": "irrigation_upgrade",
+      "label": "F",
+      "kind": "persistent_infrastructure",
+      "cost": 250.0,
+      "stacking_mode": "unique",
+      "instant_effects": {},
+      "duration_turns": null,
+      "persistent_effects": {
+        "infrastructure.food_yield": 0.2,
+        "rule_overrides.irrigation_threshold_multiplier": -0.15
+      }
+    }
+  ]
+}

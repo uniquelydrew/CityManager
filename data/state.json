@@ -1,0 +1,38 @@
+{
+  "resources": {
+    "water": 50.0,
+    "energy": 40.0,
+    "food": 60.0
+  },
+  "population": {
+    "count": 1000,
+    "health": 0.7,
+    "happiness": 0.6,
+    "unrest": 0.1
+  },
+  "economy": {
+    "budget": 10000.0,
+    "income": 500.0,
+    "base_income": 500.0,
+    "expenses": 700.0,
+    "tax_base": 1.0,
+    "service_penalty": 0.0
+  },
+  "infrastructure": {
+    "water_capacity": 1.0,
+    "grid_efficiency": 1.0,
+    "food_yield": 1.0
+  },
+  "modifiers": {
+    "active_policies": [],
+    "temporary_effects": [],
+    "persistent_effects": []
+  },
+  "telemetry": {
+    "turn": 1,
+    "stable_turn_streak": 0,
+    "last_risk_ranking": [],
+    "last_risk_values": {},
+    "last_outcome_chain": []
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "scenario_id": "town_recovery_v1",
+  "description": "Player stabilizes a failing town using math, science, RLA, and social systems",
+  "systems": ["economy", "water", "energy", "population"],
+  "failure_state": "system_collapse",
+  "success_state": "stable_equilibrium"
+}

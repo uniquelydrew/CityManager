@@ -1,0 +1,39 @@
+{
+  "dependency_rules": [
+    {
+      "id": "energy_to_water",
+      "source": "energy",
+      "target": "water",
+      "condition": "energy_after_demand < water_pump_threshold",
+      "effect": "water_loss += energy_to_water_penalty"
+    },
+    {
+      "id": "water_to_food",
+      "source": "water",
+      "target": "food",
+      "condition": "water_after_consumption < irrigation_threshold",
+      "effect": "food_loss += water_to_food_penalty"
+    },
+    {
+      "id": "food_to_population",
+      "source": "food",
+      "target": "population.health",
+      "condition": "food_after_consumption < food_security_threshold",
+      "effect": "health_delta -= food_to_health_penalty"
+    },
+    {
+      "id": "population_to_economy",
+      "source": "population.health",
+      "target": "economy.income",
+      "condition": "health < labor_threshold OR unrest > unrest_threshold",
+      "effect": "income_delta -= health_to_income_penalty"
+    },
+    {
+      "id": "economy_to_energy",
+      "source": "economy.budget",
+      "target": "energy",
+      "condition": "budget < energy_procurement_threshold",
+      "effect": "energy_generation_cap -= procurement_penalty"
+    }
+  ]
+}

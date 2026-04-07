@@ -1,0 +1,29 @@
+{
+  "actions": [
+    {
+      "type": "allocate_emergency_budget",
+      "parameters": ["energy_amount", "water_amount", "food_amount"],
+      "validation": "sum(costs) <= available_emergency_budget"
+    },
+    {
+      "type": "select_policy",
+      "parameters": ["policy_id"],
+      "validation": "policy_affordable AND policy_not_duplicate_when_unique"
+    },
+    {
+      "type": "submit_risk_assessment",
+      "parameters": ["primary_risk", "secondary_risk"],
+      "validation": "matches_forecasted_risk_ranking"
+    },
+    {
+      "type": "parse_report",
+      "parameters": ["primary_issue", "secondary_issue"],
+      "validation": "correct_issue_mapping"
+    },
+    {
+      "type": "solve_science_generation",
+      "parameters": ["additional_generation_needed"],
+      "validation": "meets_required_generation_formula"
+    }
+  ]
+}
