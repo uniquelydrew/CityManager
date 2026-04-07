@@ -28,11 +28,11 @@ def validate_allocation(
     """Validate emergency allocation total cost and rough relevance."""
     unit_costs = scenario["unit_costs"]
     key_map = {
-        "energy": allocation.get("energy", allocation.get("energy_amount", 0.0)),
+        "energy": allocation.get("energy", allocation.get("electricity", allocation.get("energy_amount", 0.0))),
         "water": allocation.get("water", allocation.get("water_amount", 0.0)),
         "food": allocation.get("food", allocation.get("food_amount", 0.0)),
         "fuel": allocation.get("fuel", 0.0),
-        "materials": allocation.get("materials", 0.0),
+        "materials": allocation.get("materials", allocation.get("supply_crates", 0.0)),
     }
     total_cost = sum(key_map[name] * unit_costs[name] for name in key_map)
     valid_budget = total_cost <= scenario["available_emergency_budget"] + 1e-9

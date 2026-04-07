@@ -34,9 +34,12 @@ from src.modifiers import (
 )
 from src.population import apply_unrest, clamp, recover_health
 from src.reports import generate_report_text, issue_label
+from src.interaction_registry import InteractionRegistry
+from src.resource_registry import ResourceRegistry
 from src.resource_utils import (
     add_stock,
     allocate,
+    build_turn_ledger,
     end_of_turn_ledger,
     ensure_resource_records,
     record_import,
@@ -48,6 +51,8 @@ from src.resource_utils import (
     stock,
 )
 from src.risk import compute_risk_ranking
+from src.units import load_units
+from src.verbs import run_allocate, run_consume, run_decay, run_produce, run_repair, run_transform
 
 
 State = Dict[str, Any]
@@ -63,6 +68,9 @@ class SimulationEngine:
         self.scenario = self._load_json("town_recovery_v2.json")
         self.dependency_rules = self._load_json("dependency_rules.json")
         self.policies_data = self._load_json("policies.json")
+        self.resource_registry = ResourceRegistry.load(data_dir)
+        self.interaction_registry = InteractionRegistry.load(data_dir)
+        self.units = load_units(data_dir)
         self.policy_map = policy_map(self.policies_data)
         self.turns = int(self.scenario.get("turns", 4))
         self.resource_defaults = self._resource_defaults()
@@ -83,14 +91,25 @@ class SimulationEngine:
         limits = self.scenario.get("resource_limits", {})
         base = self.scenario.get("base_production", {})
         initial = self.scenario.get("initial_resources", {})
-        return {
-            "water": resource_record(initial.get("water", 50.0), limits.get("water_capacity", 100.0), base.get("water", 30.0)),
-            "energy": resource_record(initial.get("energy", 40.0), limits.get("energy_capacity", 100.0), base.get("energy", 28.0)),
-            "food": resource_record(initial.get("food", 60.0), limits.get("food_capacity", 100.0), base.get("food", 24.0)),
-            "fuel": resource_record(initial.get("fuel", 25.0), limits.get("fuel_capacity", 80.0), base.get("fuel", 0.0)),
-            "materials": resource_record(initial.get("materials", 18.0), limits.get("materials_capacity", 60.0), base.get("materials", 0.0)),
-            "workforce_capacity": resource_record(initial.get("workforce_capacity", 75.0), limits.get("workforce_capacity", 100.0), base.get("workforce_capacity", 0.0)),
+        defaults: Dict[str, Dict[str, Any]] = {}
+        legacy_initial = {
+            "electricity": initial.get("electricity", initial.get("energy", 40.0)),
+            "labor_hours": initial.get("labor_hours", initial.get("workforce_capacity", 75.0)),
         }
+        for definition in self.resource_registry.all():
+            resource_type_id = definition["resource_type_id"]
+            runtime_key = self.resource_registry.runtime_key(resource_type_id)
+            storage = definition["storage"]
+            defaults[runtime_key] = resource_record(
+                initial.get(resource_type_id, legacy_initial.get(resource_type_id, definition["defaults"]["base_quantity"])),
+                limits.get(storage["capacity_key"], storage["default_capacity"]),
+                base.get(resource_type_id, base.get(runtime_key, definition["defaults"]["base_production"])),
+                resource_type_id=resource_type_id,
+                unit_id=definition["unit_id"],
+                category=definition.get("category", ""),
+                tags=definition.get("tags", []),
+            )
+        return defaults
 
     def _default_state(self) -> Dict[str, Any]:
         return {
@@ -214,6 +233,9 @@ class SimulationEngine:
             "allocation_profiles": self._priority_profiles(),
             "unit_costs": self.scenario["unit_costs"],
             "available_emergency_budget": self.scenario["available_emergency_budget"],
+            "resource_definitions": {item["resource_type_id"]: item for item in self.resource_registry.all()},
+            "interactions": self.interaction_registry.all(),
+            "units": self.units,
         }
 
     def observe_state(self) -> None:
@@ -544,10 +566,6 @@ class SimulationEngine:
         record(outcome, "modifier_effects", f"Resource priority for this turn: {priority.replace('_', ' ')}.")
         return allocation_snapshot
 
-    def _constraint(self, resources: Dict[str, Any], name: str, text: str, constraint_log: List[str]) -> None:
-        resources[name]["constraint"] = text
-        constraint_log.append(text)
-
     def _run_logistics(
         self,
         new_state: State,
@@ -559,8 +577,6 @@ class SimulationEngine:
         population = new_state["population"]
         economy = new_state["economy"]
         constants = context["constants"]
-        conversion = context["conversion_rates"]
-        base_production = context["base_production"]
         modifier_context = context["modifier_context"]
         constraint_log: List[str] = []
         recovery_flags = {
@@ -571,90 +587,77 @@ class SimulationEngine:
             "income_recovery": False,
         }
 
-        allocation_snapshot = self._allocate_by_priority(resources, context, allocation_priority, outcome)
+        allocation_snapshot: Dict[str, Any] = {"priority": allocation_priority}
         new_state["telemetry"]["turn_allocation_snapshot"] = allocation_snapshot
+        resources["workforce_capacity"]["start"] = context["workforce_available"]
+        set_stock(resources, "workforce_capacity", context["workforce_available"])
+        for interaction in self.interaction_registry.by_verb("allocate"):
+            allocations = run_allocate(resources, interaction, context, allocation_priority, outcome)
+            for target, amount in allocations.items():
+                source = interaction["constraints"]["profile_key"]
+                allocation_snapshot[f"{source}_{target}"] = amount
 
-        workforce_energy = resources["workforce_capacity"]["allocated"].get("energy", 0.0)
-        desired_energy = min(
-            base_production["energy"] * max(0.5, context["grid_efficiency"]),
-            workforce_energy * conversion["workforce_to_energy_ratio"],
+        transform_result = run_transform(
+            resources,
+            next(item for item in self.interaction_registry.by_verb("transform") if item["interaction_id"] == "fuel_to_electricity"),
+            context,
+            outcome,
+            constraint_log,
         )
-        fuel_needed = desired_energy / max(conversion["fuel_to_energy_ratio"], 1e-9)
-        available_fuel = stock(resources, "fuel")
-        fuel_used = min(available_fuel, fuel_needed)
-        if fuel_used < fuel_needed:
-            self._constraint(resources, "energy", "Power generation was limited by low fuel.", constraint_log)
-        actual_energy = min(desired_energy, fuel_used * conversion["fuel_to_energy_ratio"])
-        allocate(resources, "fuel", "generation", fuel_used)
-        record_production(resources, "energy", actual_energy)
-
-        workforce_water = resources["workforce_capacity"]["allocated"].get("water", 0.0)
-        materials_water = resources["materials"]["allocated"].get("water", 0.0)
-        pump_energy = resources["energy"]["allocated"].get("pumps", 0.0)
-        water_capacity = base_production["water"] * context["water_capacity_multiplier"]
-        pump_supply = pump_energy * (conversion["energy_to_water_ratio"] + modifier_context["pump_efficiency_bonus"])
-        water_material_support = materials_water * conversion["materials_to_repair_ratio"]
-        workforce_water_cap = workforce_water * conversion["workforce_to_water_ratio"]
-        actual_water = min(water_capacity + water_material_support, pump_supply, workforce_water_cap)
-        if actual_water < water_capacity:
-            self._constraint(resources, "water", "Water delivery was limited by pump power, repair materials, or workforce.", constraint_log)
-        record_production(resources, "water", actual_water)
-
-        workforce_food = resources["workforce_capacity"]["allocated"].get("food", 0.0)
-        energy_food = resources["energy"]["allocated"].get("food", 0.0)
-        irrigation_water = min(stock(resources, "water"), actual_water * conversion["water_to_food_ratio"])
-        food_capacity = base_production["food"] * max(0.5, context["food_yield"])
-        workforce_food_cap = workforce_food * conversion["workforce_to_food_ratio"]
-        energy_food_cap = energy_food * conversion["energy_to_food_ratio"]
-        water_food_cap = irrigation_water * conversion["water_to_food_ratio"]
-        actual_food = min(food_capacity, workforce_food_cap, energy_food_cap, water_food_cap)
-        if actual_food < food_capacity:
-            self._constraint(resources, "food", "Food production was limited by water, power, or workforce.", constraint_log)
-        used_water_for_food = min(stock(resources, "water"), actual_food / max(conversion["water_to_food_ratio"], 1e-9))
-        allocate(resources, "water", "food_production", used_water_for_food)
-        record_production(resources, "food", actual_food)
-
-        civic_energy = resources["energy"]["allocated"].get("civic", 0.0)
-        service_need = max(0.0, context["effective_energy_demand"] - civic_energy)
-        additional_energy_use = min(stock(resources, "energy"), service_need)
-        allocate(resources, "energy", "service_demand", additional_energy_use)
-        energy_service_gap = max(0.0, service_need - additional_energy_use)
-        if energy_service_gap > 0:
-            constraint_log.append(f"The town was short {energy_service_gap:.1f} energy for full service demand.")
-
-        allocate(resources, "water", "households", min(stock(resources, "water"), constants["water_consumption"]))
-        allocate(resources, "food", "households", min(stock(resources, "food"), constants["food_consumption"]))
-        materials_upkeep = min(stock(resources, "materials"), constants["materials_maintenance_cost"])
-        allocate(resources, "materials", "maintenance", materials_upkeep)
-
-        water_leakage = stock(resources, "water") * max(
-            0.0,
-            constants["water_leakage_rate"] * (1.0 + modifier_context["water_leakage_multiplier"] - materials_upkeep * 0.02),
+        water_result = run_produce(
+            resources,
+            next(item for item in self.interaction_registry.by_verb("produce") if item["interaction_id"] == "electricity_materials_labor_to_water"),
+            context,
+            outcome,
+            constraint_log,
         )
-        if water_leakage > 0:
-            lost = record_loss(resources, "water", water_leakage)
-            if lost > 0:
-                record(outcome, "dependency_effects", f"Water leakage drained {lost:.1f} water.")
-        food_spoilage = stock(resources, "food") * max(
-            0.0,
-            constants["food_spoilage_rate"] * (1.0 + modifier_context["food_spoilage_multiplier"]),
+        outcome.setdefault("_verb_cache", {})["water_produced"] = water_result.get("produced", 0.0)
+        food_result = run_produce(
+            resources,
+            next(item for item in self.interaction_registry.by_verb("produce") if item["interaction_id"] == "water_electricity_labor_to_food"),
+            context,
+            outcome,
+            constraint_log,
         )
-        if food_spoilage > 0:
-            lost = record_loss(resources, "food", food_spoilage)
-            if lost > 0:
-                record(outcome, "dependency_effects", f"Food spoilage wasted {lost:.1f} food.")
-        materials_loss = stock(resources, "materials") * max(
-            0.0,
-            constants["materials_loss_rate"] * (1.0 + modifier_context["materials_loss_multiplier"]),
+        service_result = run_consume(
+            resources,
+            next(item for item in self.interaction_registry.by_verb("consume") if item["interaction_id"] == "civic_service_energy"),
+            context,
+            outcome,
+            constraint_log,
         )
-        if materials_loss > 0:
-            record_loss(resources, "materials", materials_loss)
+        run_consume(
+            resources,
+            next(item for item in self.interaction_registry.by_verb("consume") if item["interaction_id"] == "household_water"),
+            context,
+            outcome,
+            constraint_log,
+        )
+        run_consume(
+            resources,
+            next(item for item in self.interaction_registry.by_verb("consume") if item["interaction_id"] == "household_food"),
+            context,
+            outcome,
+            constraint_log,
+        )
+        repair_result = run_repair(
+            resources,
+            next(item for item in self.interaction_registry.by_verb("repair") if item["interaction_id"] == "materials_maintenance"),
+            context,
+            outcome,
+        )
+        for interaction in self.interaction_registry.by_verb("decay"):
+            decay_result = run_decay(resources, interaction, context, outcome)
+            if interaction["interaction_id"] == "water_decay" and decay_result["lost"] > 0:
+                record(outcome, "dependency_effects", f"Water leakage drained {decay_result['lost']:.1f} water.")
+            if interaction["interaction_id"] == "food_decay" and decay_result["lost"] > 0:
+                record(outcome, "dependency_effects", f"Food spoilage wasted {decay_result['lost']:.1f} food.")
 
         for name, record_data in resources.items():
             cap_bonus = modifier_context["storage_capacity_bonus"] if name in {"water", "food", "fuel"} else 0.0
             effective_capacity = record_data["capacity"] * (1.0 + cap_bonus)
-            if record_data["stock"] > effective_capacity:
-                overflow = record_data["stock"] - effective_capacity
+            if stock(resources, name) > effective_capacity:
+                overflow = stock(resources, name) - effective_capacity
                 record_loss(resources, name, overflow)
                 constraint_log.append(f"{name.title()} overflow caused {overflow:.1f} waste.")
 
@@ -668,6 +671,7 @@ class SimulationEngine:
             population["health"] = clamp(population["health"] - constants["food_to_health_penalty"])
             population["happiness"] = clamp(population["happiness"] - 0.05)
             record(outcome, "population_effects", f"Food insecurity reduced health by {constants['food_to_health_penalty']:.2f}.")
+        energy_service_gap = service_result.get("gap", 0.0)
         if energy_service_gap > 0:
             population["happiness"] = clamp(population["happiness"] - 0.04)
             record(outcome, "dependency_effects", "Power shortages disrupted services across town.")
@@ -718,6 +722,7 @@ class SimulationEngine:
         else:
             economy["service_penalty"] = 0.0
 
+        outcome.pop("_verb_cache", None)
         return allocation_snapshot, recovery_flags, constraint_log
 
     def simulate_turn(self, state: State, actions: Actions, forecast_mode: bool = False) -> Tuple[State, OutcomeReport]:
@@ -794,10 +799,15 @@ class SimulationEngine:
             outcome["resource_flow_projection"].setdefault(name, {})
             outcome["resource_flow_projection"][name].update(
                 {
+                    "resource_type_id": entry["resource_type_id"],
+                    "unit_id": entry["unit_id"],
+                    "start_quantity": entry["start_quantity"],
                     "projected_production": entry["produced"],
                     "projected_imports": entry["imported"],
                     "projected_consumption": entry["consumed"],
                     "projected_losses": entry["lost"],
+                    "projected_flow": entry["projected_flow"],
+                    "projected_end_quantity": entry["end_quantity"],
                     "projected_end": entry["end"],
                     "primary_constraint": entry["constraint"] or "none",
                 }

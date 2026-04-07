@@ -3,8 +3,10 @@ import unittest
 
 from src.challenges import required_generation, validate_allocation, validate_science_generation
 from src.engine import SimulationEngine
+from src.interaction_registry import InteractionRegistry
 from src.modifiers import activate_policy, can_select_policy, decrement_temporary_effects
-from src.resource_utils import stock
+from src.resource_registry import ResourceRegistry
+from src.resource_utils import normalize_resource_record, stock
 from src.risk import compute_risk_ranking
 
 
@@ -14,6 +16,7 @@ class SimulationEngineTests(unittest.TestCase):
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"
         )
         self.engine = SimulationEngine(data_dir)
+        self.data_dir = data_dir
 
     def blank_actions(self) -> dict:
         return {
@@ -60,6 +63,7 @@ class SimulationEngineTests(unittest.TestCase):
         self.assertIn("resource_flow_projection", forecast)
         self.assertIn("constraint_preview", forecast)
         self.assertIn("energy", forecast["resource_flow_projection"])
+        self.assertEqual(forecast["resource_flow_projection"]["energy"]["resource_type_id"], "electricity")
 
     def test_persistent_policy_remains_active_across_turns(self) -> None:
         state = self.engine.clone_state(self.engine.state)
@@ -154,6 +158,32 @@ class SimulationEngineTests(unittest.TestCase):
         unstable["resources"]["water"]["stock"] = 0.0
         unstable_state, _ = self.engine.simulate_turn(unstable, self.blank_actions(), False)
         self.assertEqual(unstable_state["telemetry"]["stable_turn_streak"], 0)
+
+    def test_resource_registry_loads_and_resolves_aliases(self) -> None:
+        registry = ResourceRegistry.load(self.data_dir)
+        self.assertEqual(registry.resolve("energy"), "electricity")
+        self.assertEqual(registry.runtime_key("electricity"), "energy")
+        self.assertEqual(registry.get("workforce_capacity")["resource_type_id"], "labor_hours")
+
+    def test_interaction_registry_sorts_deterministically(self) -> None:
+        registry = InteractionRegistry.load(self.data_dir)
+        interactions = registry.all()
+        self.assertTrue(interactions)
+        orders = [(item["priority_order"], item["interaction_id"]) for item in interactions]
+        self.assertEqual(orders, sorted(orders))
+
+    def test_legacy_resource_normalizes_into_typed_record(self) -> None:
+        record = normalize_resource_record(
+            {"stock": 12.0, "capacity": 50.0, "base_production": 2.0},
+            resource_type_id="energy",
+            unit_id="kwh",
+            capacity=50.0,
+            base_production=2.0,
+        )
+        self.assertEqual(record["resource_type_id"], "electricity")
+        self.assertEqual(record["quantity"], 12.0)
+        self.assertEqual(record["stock"], 12.0)
+        self.assertIn("flow", record)
 
 
 if __name__ == "__main__":

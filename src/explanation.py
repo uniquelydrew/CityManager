@@ -21,6 +21,8 @@ def empty_outcome() -> Dict[str, Any]:
         "recovery_projection": {},
         "resource_flow_projection": {},
         "constraint_preview": [],
+        "interaction_ledger": [],
+        "explanation_facts": [],
     }
 
 

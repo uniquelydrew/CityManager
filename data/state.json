@@ -1,11 +1,11 @@
 {
   "resources": {
-    "water": {"stock": 50.0, "capacity": 100.0, "base_production": 30.0},
-    "energy": {"stock": 40.0, "capacity": 100.0, "base_production": 28.0},
-    "food": {"stock": 60.0, "capacity": 100.0, "base_production": 24.0},
-    "fuel": {"stock": 25.0, "capacity": 80.0, "base_production": 0.0},
-    "materials": {"stock": 18.0, "capacity": 60.0, "base_production": 0.0},
-    "workforce_capacity": {"stock": 75.0, "capacity": 100.0, "base_production": 0.0}
+    "water": {"resource_type_id": "water", "unit_id": "water_units", "quantity": 50.0, "capacity": 100.0, "base_production": 30.0},
+    "energy": {"resource_type_id": "electricity", "unit_id": "kwh", "quantity": 40.0, "capacity": 100.0, "base_production": 28.0},
+    "food": {"resource_type_id": "food", "unit_id": "meal_units", "quantity": 60.0, "capacity": 100.0, "base_production": 24.0},
+    "fuel": {"resource_type_id": "fuel", "unit_id": "fuel_units", "quantity": 25.0, "capacity": 80.0, "base_production": 0.0},
+    "materials": {"resource_type_id": "materials", "unit_id": "supply_crates", "quantity": 18.0, "capacity": 60.0, "base_production": 0.0},
+    "workforce_capacity": {"resource_type_id": "labor_hours", "unit_id": "labor_hours", "quantity": 75.0, "capacity": 100.0, "base_production": 0.0}
   },
   "population": {
     "count": 1000,

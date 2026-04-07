@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 from src.resource_utils import stock
+from src.units import format_unit_value
 
 PLAYER_RISK_LABELS = {
     "energy_instability": "Power generation risk",
@@ -17,6 +18,29 @@ PLAYER_RISK_LABELS = {
 
 def risk_label(issue_id: str) -> str:
     return PLAYER_RISK_LABELS.get(issue_id, issue_id.replace("_", " ").title())
+
+
+def _resource_definition(context: Dict[str, Any], key: str) -> Dict[str, Any]:
+    definitions = context.get("resource_definitions", {})
+    if key == "energy":
+        return definitions.get("electricity", {})
+    if key == "workforce_capacity":
+        return definitions.get("labor_hours", {})
+    return definitions.get(key, {})
+
+
+def resource_label(context: Dict[str, Any], key: str) -> str:
+    definition = _resource_definition(context, key)
+    return definition.get("player_label") or definition.get("display_name") or key.replace("_", " ").title()
+
+
+def resource_value_text(value: float, context: Dict[str, Any], key: str) -> str:
+    definition = _resource_definition(context, key)
+    unit_id = definition.get("unit_id", "")
+    units = context.get("units", {})
+    if unit_id and units:
+        return format_unit_value(float(value), unit_id, units)
+    return f"{float(value):.1f}"
 
 
 def title_case_label(issue_id: str) -> str:
@@ -142,6 +166,7 @@ def _resource_after_value(forecast: Dict[str, Any], key: str) -> float | None:
 
 def outlook_lines(forecast: Dict[str, Any]) -> List[str]:
     thresholds = threshold_snapshot(forecast)
+    context = forecast.get("context", {})
     lines: List[str] = []
     for key in ["energy", "water", "food"]:
         start = forecast.get("resource_flow_projection", {}).get(key, {}).get("start")
@@ -149,7 +174,10 @@ def outlook_lines(forecast: Dict[str, Any]) -> List[str]:
         if start is None or end is None:
             continue
         status = resource_status(float(end), thresholds[key])
-        lines.append(f"{key.title()}: {start:.1f} -> {end:.1f} | {status}")
+        lines.append(
+            f"{resource_label(context, key)}: {resource_value_text(start, context, key)} -> "
+            f"{resource_value_text(end, context, key)} | {status}"
+        )
     budget_start = forecast.get("resource_flow_projection", {}).get("budget", {}).get("start")
     budget_end = _resource_after_value(forecast, "budget")
     if budget_start is not None and budget_end is not None:
@@ -169,18 +197,19 @@ def top_risk_cards(forecast: Dict[str, Any]) -> List[str]:
 
 
 def resource_flow_lines(forecast: Dict[str, Any]) -> List[str]:
+    context = forecast.get("context", {})
     lines: List[str] = []
     for key in ["energy", "water", "food"]:
         flow = forecast.get("resource_flow_projection", {}).get(key, {})
         if not flow:
             continue
         lines.append(
-            f"{key.title()}: start {flow.get('start', 0):.1f}, "
-            f"+{flow.get('projected_production', 0):.1f} produced, "
-            f"+{flow.get('projected_imports', 0):.1f} imported, "
-            f"-{flow.get('projected_consumption', 0):.1f} used, "
-            f"-{flow.get('projected_losses', 0):.1f} lost, "
-            f"end {flow.get('projected_end', 0):.1f}"
+            f"{resource_label(context, key)}: start {resource_value_text(flow.get('start', 0), context, key)}, "
+            f"+{resource_value_text(flow.get('projected_production', 0), context, key)} produced, "
+            f"+{resource_value_text(flow.get('projected_imports', 0), context, key)} imported, "
+            f"-{resource_value_text(flow.get('projected_consumption', 0), context, key)} used, "
+            f"-{resource_value_text(flow.get('projected_losses', 0), context, key)} lost, "
+            f"end {resource_value_text(flow.get('projected_end', 0), context, key)}"
         )
     return lines or ["No resource flow forecast is available."]
 
