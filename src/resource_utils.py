@@ -57,6 +57,7 @@ def resource_record(
         "resource_type_id": canonical_resource_id(resource_type_id or ""),
         "unit_id": unit_id or "",
         "category": category or "",
+        "baseline_quantity": float(quantity),
         "quantity": float(quantity),
         "stock": float(quantity),
         "capacity": float(capacity),
@@ -107,6 +108,7 @@ def normalize_resource_record(
         value.get("category", category),
         value.get("tags", tags or []),
     )
+    record["baseline_quantity"] = float(value.get("baseline_quantity", quantity))
     flow_source = value.get("flow", {})
     for key in FLOW_KEYS:
         if key == "allocated":
