@@ -32,6 +32,20 @@ def can_select_policy(state: Dict[str, Any], policy: Dict[str, Any]) -> Tuple[bo
         and policy["policy_id"] in state["modifiers"]["active_policies"]
     ):
         return False, "That infrastructure policy is already active."
+    prerequisites = policy.get("prerequisites", {})
+    if state.get("governance", {}).get("legitimacy", 1.0) < prerequisites.get("min_legitimacy", 0.0):
+        return False, "Legitimacy is too low for that policy right now."
+    if state.get("politics", {}).get("coalition_stability", 1.0) < prerequisites.get("min_coalition_stability", 0.0):
+        return False, "Coalition support is too weak for that policy."
+    if state.get("politics", {}).get("opposition_pressure", 0.0) > prerequisites.get("max_opposition_pressure", 1.0):
+        return False, "Opposition pressure is too high for that policy."
+    faction_support = state.get("politics", {}).get("faction_support", {})
+    for actor_id, minimum in prerequisites.get("min_actor_support", {}).items():
+        if faction_support.get(actor_id, 0.0) < minimum:
+            return False, "A required stakeholder does not support that policy yet."
+    for blocked_policy_id in policy.get("mutually_exclusive_with", []):
+        if blocked_policy_id in state["modifiers"]["active_policies"]:
+            return False, "That policy conflicts with an already active policy."
     return True, ""
 
 
@@ -51,11 +65,12 @@ def activate_policy(state: Dict[str, Any], policy: Dict[str, Any]) -> Dict[str, 
             }
         )
     else:
+        duration_turns = policy.get("duration_turns", 1)
         state["modifiers"]["temporary_effects"].append(
             {
                 "modifier_id": policy["policy_id"],
                 "source_policy_id": policy["policy_id"],
-                "duration_turns": int(policy.get("duration_turns", 1)),
+                "duration_turns": None if duration_turns is None else int(duration_turns),
                 "stat_deltas": dict(policy.get("instant_effects", {})),
                 "rule_overrides": {},
                 "stacking_mode": policy.get("stacking_mode", "add"),

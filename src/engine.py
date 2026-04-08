@@ -20,6 +20,7 @@ from src.challenges import (
     validate_rla_answers,
     validate_science_generation,
 )
+from src.case_loader import load_cases
 from src.economy import compute_effective_income, update_budget
 from src.explanation import empty_outcome, record
 from src.food import effective_irrigation_threshold
@@ -67,7 +68,13 @@ class SimulationEngine:
         self.data_dir = data_dir
         self.scenario = self._load_json("town_recovery_v2.json")
         self.dependency_rules = self._load_json("dependency_rules.json")
-        self.policies_data = self._load_json("policies.json")
+        self.base_policies_data = self._load_json("policies.json")
+        self.cases = load_cases(data_dir)
+        self.active_case = self.cases[self.scenario["active_case_id"]]
+        self.policies_data = {
+            "policies": list(self.active_case.get("policy_options", []))
+            + list(self.base_policies_data.get("policies", []))
+        }
         self.resource_registry = ResourceRegistry.load(data_dir)
         self.interaction_registry = InteractionRegistry.load(data_dir)
         self.units = load_units(data_dir)
@@ -87,17 +94,45 @@ class SimulationEngine:
         with open(path, "r", encoding="utf-8") as handle:
             return json.load(handle)
 
+    def _get_path_value(self, state: Dict[str, Any], path: str, default: float = 0.0) -> Any:
+        current: Any = state
+        for part in path.split("."):
+            if not isinstance(current, dict):
+                return default
+            current = current.get(part, default)
+        return current
+
+    def _set_path_delta(self, state: Dict[str, Any], path: str, delta: float) -> None:
+        head, *rest = path.split(".")
+        current = state.setdefault(head, {})
+        for part in rest[:-1]:
+            current = current.setdefault(part, {})
+        leaf = rest[-1]
+        current[leaf] = float(current.get(leaf, 0.0) + delta)
+
+    def _clamp_indicator(self, section: str, key: str, state: Dict[str, Any]) -> None:
+        if section not in state or key not in state[section]:
+            return
+        state[section][key] = max(0.0, min(1.0, float(state[section][key])))
+
+    def _active_case_policy_ids(self) -> List[str]:
+        return [policy["policy_id"] for policy in self.active_case.get("policy_options", [])]
+
     def _resource_defaults(self) -> Dict[str, Dict[str, float]]:
         limits = self.scenario.get("resource_limits", {})
         base = self.scenario.get("base_production", {})
         initial = self.scenario.get("initial_resources", {})
         defaults: Dict[str, Dict[str, Any]] = {}
+        active_ids = set(self.scenario.get("resource_type_ids", []))
+        active_ids.update(item["resource_type_id"] for item in self.active_case.get("resources", []))
         legacy_initial = {
             "electricity": initial.get("electricity", initial.get("energy", 40.0)),
             "labor_hours": initial.get("labor_hours", initial.get("workforce_capacity", 75.0)),
         }
         for definition in self.resource_registry.all():
             resource_type_id = definition["resource_type_id"]
+            if resource_type_id not in active_ids:
+                continue
             runtime_key = self.resource_registry.runtime_key(resource_type_id)
             storage = definition["storage"]
             defaults[runtime_key] = resource_record(
@@ -112,6 +147,7 @@ class SimulationEngine:
         return defaults
 
     def _default_state(self) -> Dict[str, Any]:
+        case_world = self.active_case.get("world_state", {})
         return {
             "resources": copy.deepcopy(self.resource_defaults),
             "population": {"count": 1000, "health": 0.7, "happiness": 0.6, "unrest": 0.1},
@@ -128,6 +164,40 @@ class SimulationEngine:
                 "grid_efficiency": 1.0,
                 "food_yield": 1.0,
             },
+            "governance": copy.deepcopy(case_world.get("governance", {
+                "legitimacy": 0.6,
+                "administrative_capacity": 0.6,
+                "corruption_friction": 0.2,
+                "enforcement_reach": 0.5,
+            })),
+            "politics": copy.deepcopy(case_world.get("politics", {
+                "coalition_stability": 0.6,
+                "opposition_pressure": 0.4,
+                "elite_resistance": 0.3,
+                "faction_support": {},
+            })),
+            "society": copy.deepcopy(case_world.get("society", {
+                "public_trust": 0.6,
+                "class_sector_strain": 0.4,
+                "displacement": 0.2,
+                "labor_unrest": 0.25,
+                "mortality_burden": 0.15,
+            })),
+            "economic_conditions": copy.deepcopy(case_world.get("economic_conditions", {
+                "price_pressure": 0.4,
+                "wage_pressure": 0.4,
+                "revenue_stability": 0.5,
+                "debt_pressure": 0.4,
+                "trade_dependence": 0.5,
+                "import_dependence": 0.5,
+            })),
+            "services": copy.deepcopy(case_world.get("services", {
+                "transport_throughput": 0.5,
+                "distribution_capacity": 0.5,
+                "repair_backlog": 0.4,
+                "hospital_pressure": 0.35,
+                "institutional_bottlenecks": 0.45,
+            })),
             "modifiers": {
                 "active_policies": [],
                 "temporary_effects": [],
@@ -143,7 +213,9 @@ class SimulationEngine:
                 "resource_flow_history": [],
                 "turn_constraint_log": [],
                 "turn_allocation_snapshot": {},
+                "last_case_reports": [],
             },
+            "active_case_id": self.active_case["historical_case_id"],
         }
 
     def _deep_merge(self, default: Dict[str, Any], incoming: Dict[str, Any]) -> Dict[str, Any]:
@@ -165,6 +237,8 @@ class SimulationEngine:
         normalized["telemetry"].setdefault("resource_flow_history", [])
         normalized["telemetry"].setdefault("turn_constraint_log", [])
         normalized["telemetry"].setdefault("turn_allocation_snapshot", {})
+        normalized["telemetry"].setdefault("last_case_reports", [])
+        normalized.setdefault("active_case_id", self.active_case["historical_case_id"])
         return normalized
 
     def clone_state(self, state: State) -> State:
@@ -200,11 +274,12 @@ class SimulationEngine:
         grid_efficiency = state["infrastructure"]["grid_efficiency"] + modifier_context["grid_efficiency_bonus"]
         water_capacity = max(0.2, state["infrastructure"]["water_capacity"] + modifier_context["water_capacity_bonus"])
         food_yield = state["infrastructure"]["food_yield"] + modifier_context["food_yield_bonus"]
-        workforce_base = stock(state["resources"], "workforce_capacity")
+        workforce_record = state["resources"]["workforce_capacity"]
+        workforce_base = float(workforce_record.get("baseline_quantity", stock(state["resources"], "workforce_capacity")))
         workforce_available = max(
             0.0,
             min(
-                state["resources"]["workforce_capacity"]["capacity"],
+                workforce_record["capacity"],
                 workforce_base * state["population"]["health"] * max(0.2, 1.0 - state["population"]["unrest"])
                 + modifier_context["workforce_recovery_bonus"] * 10.0,
             ),
@@ -236,6 +311,15 @@ class SimulationEngine:
             "resource_definitions": {item["resource_type_id"]: item for item in self.resource_registry.all()},
             "interactions": self.interaction_registry.all(),
             "units": self.units,
+            "historical_case": self.active_case,
+            "case_metadata": self.active_case.get("case_metadata", {}),
+            "actors": self.active_case.get("actors", []),
+            "institutions": self.active_case.get("institutions", []),
+            "groups": self.active_case.get("groups", []),
+            "policy_domains": self.active_case.get("policy_domains", []),
+            "indicator_definitions": self.active_case.get("indicators", []),
+            "report_definitions": self.active_case.get("events_and_reports", []),
+            "historical_notes": self.active_case.get("historical_notes", {}),
         }
 
     def observe_state(self) -> None:
@@ -265,7 +349,18 @@ class SimulationEngine:
     def build_forecast(self, state: State) -> Dict[str, Any]:
         context = self.build_context(state)
         forecast = build_forecast_payload(state, self.simulate_turn, context)
-        forecast["report_text"] = generate_report_text(forecast["risk_ranking"])
+        generic_report = generate_report_text(forecast["risk_ranking"])
+        forecast["historical_case"] = self.active_case
+        forecast["historical_situation"] = self.active_case["case_metadata"]["summary"]
+        forecast["affected_groups"] = self._affected_group_lines(forecast["projected_state"])
+        forecast["political_constraints"] = self._political_constraint_lines(forecast["projected_state"])
+        forecast["system_pressures"] = self._case_pressure_lines(forecast["projected_state"])
+        forecast["case_reports"] = list(forecast["projected_state"]["telemetry"].get("last_case_reports", []))
+        if forecast["case_reports"]:
+            report_intro = " ".join(report["body"] for report in forecast["case_reports"][:2])
+            forecast["report_text"] = f"{generic_report} {report_intro}".strip()
+        else:
+            forecast["report_text"] = generic_report
         return forecast
 
     def display_forecast(self, forecast: Dict[str, Any]) -> None:
@@ -370,7 +465,11 @@ class SimulationEngine:
         available = list(self.policies_data["policies"])
         for line in social_prompt(available, self.state["economy"]["budget"] - spent):
             print(line)
-        choice = self.prompt_choice("Choose a policy (A-I): ", [policy["label"] for policy in available])
+        valid_policy_labels = [policy["label"] for policy in available]
+        choice = self.prompt_choice(
+            f"Choose a policy ({'/'.join(valid_policy_labels)}): ",
+            valid_policy_labels,
+        )
         preset = self.prompt_choice(
             "Choose an allocation priority: A) Keep Water Running B) Protect Food Supply C) Stabilize Power D) Balance Services ",
             ["A", "B", "C", "D"],
@@ -416,6 +515,10 @@ class SimulationEngine:
             "recovery_effects",
             "population_effects",
             "economy_effects",
+            "political_effects",
+            "stakeholder_effects",
+            "institution_effects",
+            "case_reports",
             "risk_changes",
             "remaining_risks",
         ]
@@ -492,6 +595,133 @@ class SimulationEngine:
             lines.append(f"{issue_label(risk['issue_id'])} {direction}.")
         return lines
 
+    def _evaluate_report_trigger(
+        self,
+        trigger: Dict[str, Any],
+        state: Dict[str, Any],
+        risk_ranking: List[Dict[str, Any]],
+        selected_policy_id: str | None,
+    ) -> bool:
+        trigger_type = trigger.get("type", "always")
+        if trigger_type == "always":
+            return True
+        if trigger_type == "indicator_below":
+            return float(self._get_path_value(state, trigger["path"], 1.0)) <= float(trigger["value"])
+        if trigger_type == "indicator_above":
+            return float(self._get_path_value(state, trigger["path"], 0.0)) >= float(trigger["value"])
+        if trigger_type == "policy_selected":
+            return selected_policy_id == trigger.get("policy_id")
+        if trigger_type == "risk_top":
+            return bool(risk_ranking) and risk_ranking[0]["issue_id"] == trigger.get("issue_id")
+        return False
+
+    def _trigger_case_reports(
+        self,
+        state: Dict[str, Any],
+        risk_ranking: List[Dict[str, Any]],
+        selected_policy_id: str | None,
+    ) -> List[Dict[str, Any]]:
+        reports: List[Dict[str, Any]] = []
+        for report in self.active_case.get("events_and_reports", []):
+            if self._evaluate_report_trigger(report.get("trigger", {}), state, risk_ranking, selected_policy_id):
+                reports.append(report)
+        return reports
+
+    def _case_pressure_lines(self, state: Dict[str, Any]) -> List[str]:
+        lines: List[str] = []
+        if state["services"]["transport_throughput"] < 0.5:
+            lines.append("Transport throughput is too weak to reliably move relief and repairs.")
+        if state["society"]["public_trust"] < 0.5:
+            lines.append("Public trust is slipping, so even useful policies may trigger backlash.")
+        if state["politics"]["coalition_stability"] < 0.5:
+            lines.append("Coalition support is fragile, limiting which policies can survive politically.")
+        if state["services"]["hospital_pressure"] > 0.5:
+            lines.append("Hospitals are under visible pressure and may need priority support.")
+        return lines or ["The case's civic pressures are tense but still manageable."]
+
+    def _affected_group_lines(self, state: Dict[str, Any]) -> List[str]:
+        lines: List[str] = []
+        for group in self.active_case.get("groups", [])[:3]:
+            pressure = group.get("main_pressure", "service instability")
+            lines.append(f"{group['display_name']} are facing {pressure}.")
+        return lines
+
+    def _political_constraint_lines(self, state: Dict[str, Any]) -> List[str]:
+        politics = state["politics"]
+        lines: List[str] = []
+        if politics["opposition_pressure"] > 0.5:
+            lines.append("Opposition pressure is high, so disruptive policies will be politically costly.")
+        if politics["elite_resistance"] > 0.5:
+            lines.append("Elite resistance is high, which can slow fiscal or industrial measures.")
+        faction_support = politics.get("faction_support", {})
+        weakest = sorted(faction_support.items(), key=lambda item: item[1])[:2]
+        for actor_id, support in weakest:
+            actor = next((a for a in self.active_case.get("actors", []) if a["actor_id"] == actor_id), None)
+            if actor:
+                lines.append(f"{actor['display_name']} support is only {support:.2f}.")
+        return lines or ["No acute political constraint is dominating the turn."]
+
+    def _apply_case_indicator_effects(self, state: Dict[str, Any], indicator_effects: Dict[str, float], outcome: OutcomeReport) -> None:
+        for path, delta in indicator_effects.items():
+            self._set_path_delta(state, path, delta)
+            section, key = path.split(".", 1)
+            if "." not in key:
+                self._clamp_indicator(section, key, state)
+            if section in {"governance", "politics", "society", "economic_conditions", "services"}:
+                label = key.replace("_", " ")
+                bucket = "political_effects" if section in {"governance", "politics"} else "institution_effects"
+                record(outcome, bucket, f"{label.title()} changed by {delta:+.2f}.")
+
+    def _apply_actor_effects(self, state: Dict[str, Any], actor_effects: Dict[str, float], outcome: OutcomeReport) -> None:
+        supports = state["politics"].setdefault("faction_support", {})
+        for actor_id, delta in actor_effects.items():
+            supports[actor_id] = max(0.0, min(1.0, float(supports.get(actor_id, 0.5) + delta)))
+            actor = next((item for item in self.active_case.get("actors", []) if item["actor_id"] == actor_id), None)
+            name = actor["display_name"] if actor else actor_id.replace("_", " ")
+            record(outcome, "stakeholder_effects", f"{name} support changed by {delta:+.2f}.")
+
+    def _apply_case_dynamics(
+        self,
+        state: Dict[str, Any],
+        outcome: OutcomeReport,
+        resource_gaps: Dict[str, float],
+        selected_policy_id: str | None,
+    ) -> None:
+        society = state["society"]
+        governance = state["governance"]
+        politics = state["politics"]
+        services = state["services"]
+        economic_conditions = state["economic_conditions"]
+
+        if resource_gaps["energy"] > 0:
+            governance["legitimacy"] -= 0.04
+            services["transport_throughput"] -= 0.03
+            politics["opposition_pressure"] += 0.05
+            record(outcome, "political_effects", "Power shortfalls weakened legitimacy and raised opposition pressure.")
+        if resource_gaps["water"] > 0 or resource_gaps["food"] > 0:
+            society["public_trust"] -= 0.05
+            society["class_sector_strain"] += 0.05
+            services["hospital_pressure"] += 0.04
+            record(outcome, "stakeholder_effects", "Households and frontline institutions felt rising strain from shortages.")
+        if state["economy"]["budget"] < self.scenario["constants"]["safe_budget_threshold"]:
+            politics["coalition_stability"] -= 0.04
+            economic_conditions["debt_pressure"] += 0.04
+            services["institutional_bottlenecks"] += 0.03
+            record(outcome, "political_effects", "Budget strain reduced coalition stability and increased debt pressure.")
+        if society["labor_unrest"] > 0.4:
+            politics["opposition_pressure"] += 0.03
+            services["distribution_capacity"] -= 0.02
+            record(outcome, "institution_effects", "Labor unrest slowed distribution and increased political friction.")
+        if selected_policy_id:
+            policy = self.policy_map[selected_policy_id]
+            self._apply_actor_effects(state, policy.get("actor_effects", {}), outcome)
+            self._apply_case_indicator_effects(state, policy.get("indicator_effects", {}), outcome)
+
+        for section in ("governance", "politics", "society", "economic_conditions", "services"):
+            for key in state[section]:
+                if isinstance(state[section][key], (int, float)):
+                    state[section][key] = max(0.0, min(1.0, float(state[section][key])))
+
     def _apply_policy(
         self,
         state: State,
@@ -511,11 +741,14 @@ class SimulationEngine:
         activate_policy(state, policy)
         direct_adjustment -= float(policy.get("cost", 0.0))
         for path, delta in policy.get("instant_effects", {}).items():
-            head, key = path.split(".")
-            if head == "resources":
+            if path.startswith("resources."):
+                key = path.split(".", 1)[1]
                 record_import(state["resources"], key, float(delta))
             else:
-                state[head][key] += delta
+                self._set_path_delta(state, path, float(delta))
+        framing = policy.get("historical_framing")
+        if framing:
+            record(outcome, "modifier_effects", framing)
         record(outcome, "modifier_effects", f"Selected policy {selected_policy_id} for ${policy['cost']:.2f}.")
         return direct_adjustment
 
@@ -591,19 +824,30 @@ class SimulationEngine:
         new_state["telemetry"]["turn_allocation_snapshot"] = allocation_snapshot
         resources["workforce_capacity"]["start"] = context["workforce_available"]
         set_stock(resources, "workforce_capacity", context["workforce_available"])
-        for interaction in self.interaction_registry.by_verb("allocate"):
-            allocations = run_allocate(resources, interaction, context, allocation_priority, outcome)
-            for target, amount in allocations.items():
-                source = interaction["constraints"]["profile_key"]
-                allocation_snapshot[f"{source}_{target}"] = amount
+        labor_allocation = next(
+            item for item in self.interaction_registry.by_verb("allocate") if item["interaction_id"] == "allocate_labor"
+        )
+        allocations = run_allocate(resources, labor_allocation, context, allocation_priority, outcome)
+        for target, amount in allocations.items():
+            allocation_snapshot[f"workforce_{target}"] = amount
 
-        transform_result = run_transform(
+        run_transform(
             resources,
             next(item for item in self.interaction_registry.by_verb("transform") if item["interaction_id"] == "fuel_to_electricity"),
             context,
             outcome,
             constraint_log,
         )
+        for interaction_id, prefix in (
+            ("allocate_electricity", "energy"),
+            ("allocate_materials", "materials"),
+        ):
+            interaction = next(
+                item for item in self.interaction_registry.by_verb("allocate") if item["interaction_id"] == interaction_id
+            )
+            allocations = run_allocate(resources, interaction, context, allocation_priority, outcome)
+            for target, amount in allocations.items():
+                allocation_snapshot[f"{prefix}_{target}"] = amount
         water_result = run_produce(
             resources,
             next(item for item in self.interaction_registry.by_verb("produce") if item["interaction_id"] == "electricity_materials_labor_to_water"),
@@ -777,6 +1021,13 @@ class SimulationEngine:
         economy["budget"] = new_budget
         record(outcome, "economy_effects", f"Operations and imports changed the budget by {net:+.2f}, leaving ${economy['budget']:.2f}.")
 
+        resource_gaps = {
+            "energy": max(0.0, context["effective_energy_demand"] - resources["energy"]["allocated"].get("service_demand", 0.0)),
+            "water": max(0.0, constants["water_consumption"] - resources["water"]["allocated"].get("households", 0.0)),
+            "food": max(0.0, constants["food_consumption"] - resources["food"]["allocated"].get("households", 0.0)),
+        }
+        self._apply_case_dynamics(new_state, outcome, resource_gaps, actions.get("selected_policy_id"))
+
         outcome["base_projection"]["budget"] = {"start": state["economy"]["budget"], "after_operations": economy["budget"]}
         outcome["resource_flow_projection"]["budget"] = {
             "start": state["economy"]["budget"],
@@ -793,6 +1044,7 @@ class SimulationEngine:
         new_state["telemetry"]["resource_flow_history"] = history[-8:]
         new_state["telemetry"]["turn_constraint_log"] = list(constraint_log)
         new_state["telemetry"]["turn_allocation_snapshot"] = allocation_snapshot
+        set_stock(resources, "workforce_capacity", context["workforce_available"])
         outcome["constraint_preview"] = constraint_log
 
         for name, entry in ledger.items():
@@ -823,6 +1075,11 @@ class SimulationEngine:
             ledger,
             constraint_log,
         )
+        case_reports = self._trigger_case_reports(new_state, risk_ranking, actions.get("selected_policy_id"))
+        new_state["telemetry"]["last_case_reports"] = case_reports
+        outcome["case_reports"] = []
+        for report_item in case_reports:
+            record(outcome, "case_reports", f"{report_item['title']}: {report_item['body']}")
         current_risk_values = {risk["issue_id"]: risk["severity"] for risk in risk_ranking}
         new_state["telemetry"]["last_risk_ranking"] = risk_ranking
         new_state["telemetry"]["last_risk_values"] = current_risk_values
@@ -833,6 +1090,10 @@ class SimulationEngine:
             f"{issue_label(risk['issue_id'])}: {risk['severity']:.2f} ({risk['reason']})"
             for risk in risk_ranking[:3]
         ]
+        outcome["historical_situation"] = self.active_case["case_metadata"]["summary"]
+        outcome["political_constraints"] = self._political_constraint_lines(new_state)
+        outcome["stakeholder_snapshot"] = self._affected_group_lines(new_state)
+        outcome["system_pressures"] = self._case_pressure_lines(new_state)
 
         stable = (
             stock(resources, "energy") >= constants["safe_energy_threshold"]
@@ -856,6 +1117,10 @@ class SimulationEngine:
             "recovery_effects",
             "population_effects",
             "economy_effects",
+            "political_effects",
+            "stakeholder_effects",
+            "institution_effects",
+            "case_reports",
             "risk_changes",
             "remaining_risks",
         ]:

@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QLabel, QProgressBar, QVBoxLayout, QWidget
 
 from src.resource_utils import stock
-from src.ui.formatters import active_policy_text, state_status_snapshot, title_case_label
+from src.ui.formatters import active_policy_text, case_title_text, state_status_snapshot, title_case_label
 
 
 class SystemDashboard(QWidget):
@@ -10,6 +10,7 @@ class SystemDashboard(QWidget):
         layout = QVBoxLayout(self)
 
         self.title = QLabel("Town Status")
+        self.case_title = QLabel("Historical Case")
         self.water = self._make_bar("Water")
         self.energy = self._make_bar("Energy")
         self.food = self._make_bar("Food")
@@ -21,10 +22,13 @@ class SystemDashboard(QWidget):
         self.supporting.setWordWrap(True)
         self.active_policies = QLabel("No active town policies.")
         self.active_policies.setWordWrap(True)
+        self.civic_status = QLabel("Legitimacy: 0.00 | Trust: 0.00 | Coalition: 0.00")
+        self.civic_status.setWordWrap(True)
         self.status_summary = QLabel("Most urgent problem: none")
         self.status_summary.setWordWrap(True)
 
         layout.addWidget(self.title)
+        layout.addWidget(self.case_title)
         for item in [self.water, self.energy, self.food, self.health]:
             layout.addWidget(item["label"])
             layout.addWidget(item["bar"])
@@ -33,6 +37,7 @@ class SystemDashboard(QWidget):
         layout.addWidget(self.streak)
         layout.addWidget(self.supporting)
         layout.addWidget(self.active_policies)
+        layout.addWidget(self.civic_status)
         layout.addWidget(self.status_summary)
         layout.addStretch(1)
 
@@ -45,6 +50,7 @@ class SystemDashboard(QWidget):
 
     def update(self, state, forecast):
         statuses = state_status_snapshot(state, forecast)
+        self.case_title.setText(case_title_text(forecast))
         self.water["bar"].setValue(int(max(0, min(100, stock(state["resources"], "water")))))
         self.energy["bar"].setValue(int(max(0, min(100, stock(state["resources"], "energy")))))
         self.food["bar"].setValue(int(max(0, min(100, stock(state["resources"], "food")))))
@@ -66,6 +72,11 @@ class SystemDashboard(QWidget):
             f"Workforce: {stock(state['resources'], 'workforce_capacity'):.0f}"
         )
         self.active_policies.setText(active_policy_text(state))
+        self.civic_status.setText(
+            f"Legitimacy: {state['governance']['legitimacy']:.2f} | "
+            f"Trust: {state['society']['public_trust']:.2f} | "
+            f"Coalition: {state['politics']['coalition_stability']:.2f}"
+        )
         if forecast["risk_ranking"]:
             top = forecast["risk_ranking"][0]
             self.status_summary.setText(

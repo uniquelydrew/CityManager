@@ -13,6 +13,9 @@ PLAYER_RISK_LABELS = {
     "food_collapse": "Food supply risk",
     "water_shortage": "Water delivery risk",
     "unrest_spike": "Workforce strain risk",
+    "institutional_breakdown": "Institution breakdown risk",
+    "political_stalemate": "Political stalemate risk",
+    "public_trust_collapse": "Public trust risk",
 }
 
 
@@ -113,6 +116,12 @@ def consequence_sentence(forecast: Dict[str, Any]) -> str:
         return "If the budget keeps shrinking, emergency response will get harder."
     if issue_id == "unrest_spike":
         return "If community strain grows, services and income may suffer."
+    if issue_id == "institutional_breakdown":
+        return "If institutions keep weakening, relief and repair efforts may stall."
+    if issue_id == "political_stalemate":
+        return "If coalition support breaks down, strong policies may become unavailable."
+    if issue_id == "public_trust_collapse":
+        return "If public trust falls further, backlash and instability may spread quickly."
     return "If nothing changes, one of the town's key systems may get worse next turn."
 
 
@@ -131,6 +140,12 @@ def recommendation_sentence(forecast: Dict[str, Any]) -> str:
         return "Spend carefully this turn and focus only on the most urgent shortage."
     if issue_id == "unrest_spike":
         return "Protect core services first so health and community stability can recover."
+    if issue_id == "institutional_breakdown":
+        return "Strengthen transport, distribution, or repair capacity before more systems jam up."
+    if issue_id == "political_stalemate":
+        return "Choose a policy that can still hold coalition support, not just one that looks efficient."
+    if issue_id == "public_trust_collapse":
+        return "Protect visible services and frontline groups so public trust can recover."
     return "Focus on the strongest warning first."
 
 
@@ -140,6 +155,7 @@ def system_links(forecast: Dict[str, Any]) -> List[str]:
         "Power and materials affect water delivery.",
         "Water, power, and workers affect food supply.",
         "Health and unrest affect workforce and town income.",
+        "Trust and coalition support affect which policies can survive politically.",
     ]
     top = top_risk(forecast)
     if top and top["issue_id"] == "budget_erosion":
@@ -203,14 +219,22 @@ def resource_flow_lines(forecast: Dict[str, Any]) -> List[str]:
         flow = forecast.get("resource_flow_projection", {}).get(key, {})
         if not flow:
             continue
+        label = resource_label(context, key)
         lines.append(
-            f"{resource_label(context, key)}: start {resource_value_text(flow.get('start', 0), context, key)}, "
+            f"{label}: start {resource_value_text(flow.get('start', 0), context, key)}, "
             f"+{resource_value_text(flow.get('projected_production', 0), context, key)} produced, "
             f"+{resource_value_text(flow.get('projected_imports', 0), context, key)} imported, "
             f"-{resource_value_text(flow.get('projected_consumption', 0), context, key)} used, "
             f"-{resource_value_text(flow.get('projected_losses', 0), context, key)} lost, "
             f"end {resource_value_text(flow.get('projected_end', 0), context, key)}"
         )
+        allocations = flow.get("projected_flow", {}).get("allocated", {})
+        if allocations:
+            allocation_parts = ", ".join(f"{name} {value:.1f}" for name, value in allocations.items())
+            lines.append(f"  Uses: {allocation_parts}")
+        constraint = flow.get("primary_constraint")
+        if constraint and constraint != "none":
+            lines.append(f"  Bottleneck: {constraint}")
     return lines or ["No resource flow forecast is available."]
 
 
@@ -255,10 +279,24 @@ def improvement_lines(forecast: Dict[str, Any]) -> List[str]:
             "Smaller, targeted purchases can protect the budget.",
             "A safer budget keeps future emergency options open.",
         ]
+    if issue_id == "political_stalemate":
+        return [
+            "A policy that protects coalition support can unlock stronger actions next turn.",
+            "Negotiated relief may matter as much as raw supply purchases.",
+        ]
+    if issue_id == "institutional_breakdown":
+        return [
+            "Repair and transport capacity can prevent multiple downstream failures.",
+            "Strong institutions make every supply decision work better.",
+        ]
     return [recommendation_sentence(forecast)]
 
 
 def mission_text(forecast: Dict[str, Any]) -> str:
+    case_meta = forecast.get("context", {}).get("case_metadata", {})
+    title = case_meta.get("title")
+    if title:
+        return f"Goal: stabilize {title} long enough to avoid cascading civic failure."
     return "Goal: keep the town stable for 2 safe turns."
 
 
@@ -271,6 +309,19 @@ def current_problem_text(forecast: Dict[str, Any]) -> str:
     if not top:
         return "Current urgent problem: none."
     return f"Current urgent problem: {risk_label(top['issue_id'])}."
+
+
+def case_title_text(forecast: Dict[str, Any]) -> str:
+    meta = forecast.get("context", {}).get("case_metadata", {})
+    title = meta.get("title", "Town Recovery Simulation")
+    place = meta.get("place", "")
+    timeframe = meta.get("timeframe", "")
+    parts = [title]
+    if place:
+        parts.append(place)
+    if timeframe:
+        parts.append(timeframe)
+    return " | ".join(parts)
 
 
 def active_policy_text(state: Dict[str, Any]) -> str:
@@ -286,6 +337,8 @@ def policy_title(policy_id: str) -> str:
 
 def policy_summary(policy: Dict[str, Any]) -> str:
     policy_id = policy["policy_id"]
+    if policy.get("historical_framing"):
+        return policy["historical_framing"]
     if policy_id == "water_emergency_crews":
         return "Short-term help: adds emergency water this turn."
     if policy_id == "grid_fuel_delivery":
@@ -308,8 +361,11 @@ def policy_summary(policy: Dict[str, Any]) -> str:
 
 
 def tutor_startup_lines(forecast: Dict[str, Any]) -> List[str]:
+    meta = forecast.get("context", {}).get("case_metadata", {})
     return [
+        case_title_text(forecast),
         mission_text(forecast),
+        meta.get("summary", urgent_problem_sentence(forecast)),
         urgent_problem_sentence(forecast),
         consequence_sentence(forecast),
         recommendation_sentence(forecast),
@@ -338,6 +394,7 @@ def tutor_turn_lines(result: Dict[str, Any]) -> List[str]:
     dependency = outcome.get("dependency_effects", [])
     recovery = outcome.get("recovery_effects", [])
     remaining = outcome.get("remaining_risks", [])
+    energy_ledger = state.get("telemetry", {}).get("turn_resource_ledger", {}).get("energy", {})
     lines = [f"Turn {turn}"]
     if chosen:
         if len(chosen) == 1:
@@ -353,6 +410,14 @@ def tutor_turn_lines(result: Dict[str, Any]) -> List[str]:
         lines.append(f"Policy: You also chose {policy_title(selected_policy_id).lower()}.")
     if priority:
         lines.append(f"Priority: You focused on {priority.replace('_', ' ')}.")
+    if energy_ledger and (energy_ledger.get("produced", 0.0) > 0 or energy_ledger.get("imported", 0.0) > 0):
+        lines.append(
+            "Power flow: "
+            f"{energy_ledger.get('produced', 0.0):.1f} produced, "
+            f"{energy_ledger.get('imported', 0.0):.1f} imported, "
+            f"{energy_ledger.get('consumed', 0.0):.1f} used, "
+            f"{energy_ledger.get('end', 0.0):.1f} left."
+        )
     if dependency:
         lines.append("What changed: " + dependency[0])
     elif recovery:
@@ -363,4 +428,28 @@ def tutor_turn_lines(result: Dict[str, Any]) -> List[str]:
         lines.append("Why it changed: " + recovery[0])
     if remaining:
         lines.append("What to focus on next: " + remaining[0].split(":", 1)[0] + ".")
+    reports = outcome.get("case_reports", [])
+    if reports:
+        lines.append("Historical note: " + reports[0])
     return lines
+
+
+def historical_situation_text(forecast: Dict[str, Any]) -> str:
+    meta = forecast.get("context", {}).get("case_metadata", {})
+    return meta.get("summary", urgent_problem_sentence(forecast))
+
+
+def affected_group_lines(forecast: Dict[str, Any]) -> List[str]:
+    return list(forecast.get("affected_groups", [])) or ["No group-specific pressure is dominant right now."]
+
+
+def political_constraint_lines(forecast: Dict[str, Any]) -> List[str]:
+    return list(forecast.get("political_constraints", [])) or ["Political constraints are currently manageable."]
+
+
+def system_pressure_lines(forecast: Dict[str, Any]) -> List[str]:
+    case_reports = forecast.get("case_reports", [])
+    lines = list(forecast.get("system_pressures", []))
+    if case_reports:
+        lines.extend(f"{report['title']}: {report['body']}" for report in case_reports[:2])
+    return lines or ["No major historical pressure signal is active right now."]

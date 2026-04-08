@@ -2,6 +2,7 @@ import os
 import unittest
 
 from src.challenges import required_generation, validate_allocation, validate_science_generation
+from src.case_loader import load_cases
 from src.engine import SimulationEngine
 from src.interaction_registry import InteractionRegistry
 from src.modifiers import activate_policy, can_select_policy, decrement_temporary_effects
@@ -64,6 +65,9 @@ class SimulationEngineTests(unittest.TestCase):
         self.assertIn("constraint_preview", forecast)
         self.assertIn("energy", forecast["resource_flow_projection"])
         self.assertEqual(forecast["resource_flow_projection"]["energy"]["resource_type_id"], "electricity")
+        self.assertIn("historical_situation", forecast)
+        self.assertIn("political_constraints", forecast)
+        self.assertIn("affected_groups", forecast)
 
     def test_persistent_policy_remains_active_across_turns(self) -> None:
         state = self.engine.clone_state(self.engine.state)
@@ -164,6 +168,26 @@ class SimulationEngineTests(unittest.TestCase):
         self.assertEqual(registry.resolve("energy"), "electricity")
         self.assertEqual(registry.runtime_key("electricity"), "energy")
         self.assertEqual(registry.get("workforce_capacity")["resource_type_id"], "labor_hours")
+
+    def test_case_loader_finds_two_historical_cases(self) -> None:
+        cases = load_cases(self.data_dir)
+        self.assertIn("berlin_airlift_1948", cases)
+        self.assertIn("new_york_fiscal_crisis_1975", cases)
+
+    def test_case_policy_affects_politics_and_society(self) -> None:
+        state = self.engine.clone_state(self.engine.state)
+        actions = self.blank_actions()
+        actions["selected_policy_id"] = "night_unloading_compact"
+        next_state, outcome = self.engine.simulate_turn(state, actions, False)
+        self.assertNotEqual(
+            next_state["politics"]["coalition_stability"],
+            state["politics"]["coalition_stability"],
+        )
+        self.assertTrue(outcome["stakeholder_effects"] or outcome["political_effects"])
+
+    def test_case_reports_trigger_in_forecast(self) -> None:
+        forecast = self.engine.build_forecast(self.engine.state)
+        self.assertTrue(forecast["case_reports"])
 
     def test_interaction_registry_sorts_deterministically(self) -> None:
         registry = InteractionRegistry.load(self.data_dir)

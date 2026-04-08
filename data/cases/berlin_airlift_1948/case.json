@@ -1,0 +1,318 @@
+{
+  "historical_case_id": "berlin_airlift_1948",
+  "case_metadata": {
+    "title": "Berlin Airlift",
+    "place": "West Berlin",
+    "timeframe": "1948-1949",
+    "summary": "A blockade has severed most ground supply lines. Civil authorities and allied planners must keep households, hospitals, and industry alive while navigating labor strain, political pressure, and limited transport capacity.",
+    "reference_notes": [
+      "Modeled after the Berlin Blockade and Airlift.",
+      "Uses adapted but historically recognizable constraints rather than exact archival values."
+    ]
+  },
+  "world_state": {
+    "governance": {
+      "legitimacy": 0.62,
+      "administrative_capacity": 0.58,
+      "corruption_friction": 0.18,
+      "enforcement_reach": 0.44
+    },
+    "politics": {
+      "coalition_stability": 0.63,
+      "opposition_pressure": 0.51,
+      "elite_resistance": 0.24,
+      "faction_support": {
+        "allied_command": 0.74,
+        "city_magistrate": 0.63,
+        "dock_and_airfield_unions": 0.54,
+        "industrial_owners": 0.49
+      }
+    },
+    "society": {
+      "public_trust": 0.58,
+      "class_sector_strain": 0.47,
+      "displacement": 0.21,
+      "labor_unrest": 0.29,
+      "mortality_burden": 0.16
+    },
+    "economic_conditions": {
+      "price_pressure": 0.44,
+      "wage_pressure": 0.33,
+      "revenue_stability": 0.46,
+      "debt_pressure": 0.41,
+      "trade_dependence": 0.82,
+      "import_dependence": 0.88
+    },
+    "services": {
+      "transport_throughput": 0.43,
+      "distribution_capacity": 0.56,
+      "repair_backlog": 0.46,
+      "hospital_pressure": 0.39,
+      "institutional_bottlenecks": 0.52
+    }
+  },
+  "actors": [
+    {
+      "actor_id": "allied_command",
+      "display_name": "Allied Command",
+      "kind": "external_authority",
+      "agenda": "Keep the city supplied without conceding political ground."
+    },
+    {
+      "actor_id": "city_magistrate",
+      "display_name": "City Magistrate",
+      "kind": "civic_government",
+      "agenda": "Maintain local order and legitimacy under blockade conditions."
+    },
+    {
+      "actor_id": "dock_and_airfield_unions",
+      "display_name": "Dock and Airfield Unions",
+      "kind": "labor",
+      "agenda": "Protect worker safety, rations, and bargaining power."
+    },
+    {
+      "actor_id": "industrial_owners",
+      "display_name": "Industrial Owners",
+      "kind": "economic_elite",
+      "agenda": "Preserve production and avoid deep industrial power cuts."
+    }
+  ],
+  "institutions": [
+    {
+      "institution_id": "airlift_command",
+      "display_name": "Airlift Command",
+      "status_indicator": "transport_throughput"
+    },
+    {
+      "institution_id": "city_utilities",
+      "display_name": "City Utilities",
+      "status_indicator": "distribution_capacity"
+    },
+    {
+      "institution_id": "municipal_hospitals",
+      "display_name": "Municipal Hospitals",
+      "status_indicator": "hospital_pressure"
+    }
+  ],
+  "groups": [
+    {
+      "group_id": "households",
+      "display_name": "Urban Households",
+      "main_pressure": "heat and food insecurity"
+    },
+    {
+      "group_id": "industrial_workers",
+      "display_name": "Industrial Workers",
+      "main_pressure": "ration fatigue and long shifts"
+    },
+    {
+      "group_id": "hospital_patients",
+      "display_name": "Hospital Patients",
+      "main_pressure": "medical and heating reliability"
+    }
+  ],
+  "resources": [
+    {"resource_type_id": "water", "display_name": "Water"},
+    {"resource_type_id": "electricity", "display_name": "Power"},
+    {"resource_type_id": "food", "display_name": "Food"},
+    {"resource_type_id": "fuel", "display_name": "Fuel"},
+    {"resource_type_id": "materials", "display_name": "Repair Materials"},
+    {"resource_type_id": "labor_hours", "display_name": "Labor Hours"},
+    {"resource_type_id": "coal", "display_name": "Coal"},
+    {"resource_type_id": "rail_capacity", "display_name": "Rail Capacity"},
+    {"resource_type_id": "foreign_aid", "display_name": "Foreign Aid"}
+  ],
+  "indicators": [
+    {"indicator_id": "legitimacy", "section": "governance", "display_name": "Legitimacy", "warn_below": 0.5},
+    {"indicator_id": "coalition_stability", "section": "politics", "display_name": "Coalition Stability", "warn_below": 0.5},
+    {"indicator_id": "public_trust", "section": "society", "display_name": "Public Trust", "warn_below": 0.5},
+    {"indicator_id": "labor_unrest", "section": "society", "display_name": "Labor Unrest", "warn_above": 0.45},
+    {"indicator_id": "transport_throughput", "section": "services", "display_name": "Transport Throughput", "warn_below": 0.5}
+  ],
+  "policy_domains": [
+    "emergency_airlift",
+    "rationing",
+    "labor_bargaining",
+    "critical_services",
+    "industrial_power"
+  ],
+  "policy_options": [
+    {
+      "policy_id": "expand_airlift_sorties",
+      "label": "A",
+      "kind": "emergency_action",
+      "policy_domain": "emergency_airlift",
+      "cost": 180.0,
+      "stacking_mode": "add",
+      "duration_turns": 1,
+      "instant_effects": {
+        "resources.energy": 16.0,
+        "resources.food": 10.0,
+        "resources.fuel": 10.0
+      },
+      "persistent_effects": {},
+      "actor_effects": {
+        "allied_command": 0.06,
+        "dock_and_airfield_unions": -0.03
+      },
+      "indicator_effects": {
+        "services.transport_throughput": 0.08,
+        "society.public_trust": 0.03,
+        "society.labor_unrest": 0.02
+      },
+      "historical_framing": "Fly in more supplies immediately, accepting higher strain on crews and ground operations.",
+      "explanation_text": "Airlift expansion delivered quick relief but raised labor pressure."
+    },
+    {
+      "policy_id": "household_power_rationing",
+      "label": "B",
+      "kind": "administrative_policy",
+      "policy_domain": "rationing",
+      "cost": 90.0,
+      "stacking_mode": "unique",
+      "duration_turns": null,
+      "instant_effects": {},
+      "persistent_effects": {
+        "rule_overrides.energy_demand_multiplier": -0.14
+      },
+      "actor_effects": {
+        "city_magistrate": 0.02,
+        "industrial_owners": -0.02
+      },
+      "indicator_effects": {
+        "society.public_trust": -0.04,
+        "society.class_sector_strain": 0.04,
+        "politics.opposition_pressure": 0.03
+      },
+      "historical_framing": "Impose stricter household rationing to protect the grid and critical facilities.",
+      "explanation_text": "Rationing preserved power but strained trust and daily life."
+    },
+    {
+      "policy_id": "hospital_coal_priority",
+      "label": "C",
+      "kind": "social_policy",
+      "policy_domain": "critical_services",
+      "cost": 140.0,
+      "stacking_mode": "add",
+      "duration_turns": 1,
+      "instant_effects": {
+        "resources.energy": 8.0,
+        "resources.materials": 6.0
+      },
+      "persistent_effects": {},
+      "actor_effects": {
+        "city_magistrate": 0.04
+      },
+      "indicator_effects": {
+        "services.hospital_pressure": -0.1,
+        "society.mortality_burden": -0.05,
+        "society.public_trust": 0.03
+      },
+      "historical_framing": "Direct scarce fuel and repair crews toward hospitals and emergency facilities first.",
+      "explanation_text": "Hospital prioritization eased medical pressure and improved trust."
+    },
+    {
+      "policy_id": "night_unloading_compact",
+      "label": "D",
+      "kind": "political_bargaining_action",
+      "policy_domain": "labor_bargaining",
+      "cost": 120.0,
+      "stacking_mode": "unique",
+      "duration_turns": null,
+      "instant_effects": {
+        "resources.workforce_capacity": 12.0
+      },
+      "persistent_effects": {
+        "rule_overrides.workforce_recovery_bonus": 0.1
+      },
+      "actor_effects": {
+        "dock_and_airfield_unions": 0.09,
+        "allied_command": 0.02
+      },
+      "indicator_effects": {
+        "politics.coalition_stability": 0.06,
+        "society.labor_unrest": -0.05,
+        "services.transport_throughput": 0.05
+      },
+      "prerequisites": {
+        "min_actor_support": {
+          "dock_and_airfield_unions": 0.45
+        }
+      },
+      "historical_framing": "Negotiate a labor compact for night unloading and coordinated shifts at airfields.",
+      "explanation_text": "Labor bargaining improved throughput and reduced strike pressure."
+    },
+    {
+      "policy_id": "factory_power_cutbacks",
+      "label": "E",
+      "kind": "economic_policy",
+      "policy_domain": "industrial_power",
+      "cost": 110.0,
+      "stacking_mode": "unique",
+      "duration_turns": null,
+      "instant_effects": {},
+      "persistent_effects": {
+        "rule_overrides.energy_demand_multiplier": -0.08
+      },
+      "actor_effects": {
+        "industrial_owners": -0.09,
+        "dock_and_airfield_unions": -0.04
+      },
+      "indicator_effects": {
+        "society.class_sector_strain": 0.06,
+        "economic_conditions.wage_pressure": -0.04,
+        "politics.opposition_pressure": 0.05
+      },
+      "historical_framing": "Cut industrial power access to protect residential and emergency supply needs.",
+      "explanation_text": "Industrial cutbacks freed power but worsened economic and political tension."
+    }
+  ],
+  "interaction_overrides": {},
+  "events_and_reports": [
+    {
+      "report_id": "blockade_brief",
+      "title": "Blockade Pressure",
+      "audience": "player",
+      "trigger": {
+        "type": "always"
+      },
+      "body": "Ground routes remain blocked, so airlift and rationing decisions are carrying more of the city's survival burden."
+    },
+    {
+      "report_id": "airfield_labor_warning",
+      "title": "Airfield Labor Warning",
+      "audience": "player",
+      "trigger": {
+        "type": "indicator_below",
+        "path": "politics.faction_support.dock_and_airfield_unions",
+        "value": 0.5
+      },
+      "body": "Union leaders warn that longer unloading shifts without concessions may disrupt overnight supply handling."
+    },
+    {
+      "report_id": "hospital_strain_notice",
+      "title": "Hospital Strain Notice",
+      "audience": "player",
+      "trigger": {
+        "type": "indicator_above",
+        "path": "services.hospital_pressure",
+        "value": 0.5
+      },
+      "body": "Hospital administrators report dangerously tight heating, medicine, and transport schedules."
+    }
+  ],
+  "teaching_signals": {
+    "main_skills": [
+      "systems reasoning",
+      "cause and effect",
+      "tradeoff analysis",
+      "stakeholder reading"
+    ],
+    "guidance": "Short-term relief can raise labor strain or political opposition. Players should compare immediate supply gains against coalition stability and public trust."
+  },
+  "historical_notes": {
+    "mode": "close_case",
+    "provenance": "Scenario is historically grounded but mechanically adapted for deterministic play.",
+    "design_warning": "Do not encode unique historical facts in engine logic; keep them in case data."
+  }
+}

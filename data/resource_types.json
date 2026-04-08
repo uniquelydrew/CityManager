@@ -101,6 +101,125 @@
       },
       "supported_verbs": ["allocate", "produce", "transform"],
       "tags": ["support", "labor"]
+    },
+    {
+      "resource_type_id": "coal",
+      "display_name": "Coal",
+      "player_label": "Coal",
+      "unit_id": "tons",
+      "category": "support_input",
+      "storage": {
+        "capacity_key": "coal_capacity",
+        "default_capacity": 120.0
+      },
+      "defaults": {
+        "base_quantity": 0.0,
+        "base_production": 0.0
+      },
+      "supported_verbs": ["store", "trade", "distribute", "ration"],
+      "tags": ["historical", "fuel"]
+    },
+    {
+      "resource_type_id": "grain",
+      "display_name": "Grain",
+      "player_label": "Grain",
+      "unit_id": "tons",
+      "category": "core_supply",
+      "storage": {
+        "capacity_key": "grain_capacity",
+        "default_capacity": 120.0
+      },
+      "defaults": {
+        "base_quantity": 0.0,
+        "base_production": 0.0
+      },
+      "supported_verbs": ["store", "trade", "distribute", "ration"],
+      "tags": ["historical", "food"]
+    },
+    {
+      "resource_type_id": "rail_capacity",
+      "display_name": "Rail Capacity",
+      "player_label": "Rail Throughput",
+      "unit_id": "capacity_points",
+      "category": "institutional_capacity",
+      "storage": {
+        "capacity_key": "rail_capacity",
+        "default_capacity": 100.0
+      },
+      "defaults": {
+        "base_quantity": 0.0,
+        "base_production": 0.0
+      },
+      "supported_verbs": ["allocate", "rebuild", "repair"],
+      "tags": ["historical", "logistics"]
+    },
+    {
+      "resource_type_id": "tax_receipts",
+      "display_name": "Tax Receipts",
+      "player_label": "Tax Receipts",
+      "unit_id": "currency_usd",
+      "category": "financial_capacity",
+      "storage": {
+        "capacity_key": "tax_receipts_capacity",
+        "default_capacity": 10000.0
+      },
+      "defaults": {
+        "base_quantity": 0.0,
+        "base_production": 0.0
+      },
+      "supported_verbs": ["collect", "subsidize", "borrow"],
+      "tags": ["historical", "finance"]
+    },
+    {
+      "resource_type_id": "public_trust_resource",
+      "display_name": "Public Trust",
+      "player_label": "Public Trust",
+      "unit_id": "trust_points",
+      "category": "social_indicator",
+      "storage": {
+        "capacity_key": "public_trust_capacity",
+        "default_capacity": 1.0
+      },
+      "defaults": {
+        "base_quantity": 0.0,
+        "base_production": 0.0
+      },
+      "supported_verbs": ["recover", "degrade", "mobilize"],
+      "tags": ["historical", "society"]
+    },
+    {
+      "resource_type_id": "union_support",
+      "display_name": "Union Support",
+      "player_label": "Union Support",
+      "unit_id": "support_points",
+      "category": "political_support",
+      "storage": {
+        "capacity_key": "union_support_capacity",
+        "default_capacity": 1.0
+      },
+      "defaults": {
+        "base_quantity": 0.0,
+        "base_production": 0.0
+      },
+      "supported_verbs": ["negotiate", "mobilize", "degrade"],
+      "tags": ["historical", "politics"]
+    },
+    {
+      "resource_type_id": "foreign_aid",
+      "display_name": "Foreign Aid",
+      "player_label": "Foreign Aid",
+      "unit_id": "capacity_points",
+      "category": "support_input",
+      "storage": {
+        "capacity_key": "foreign_aid_capacity",
+        "default_capacity": 100.0
+      },
+      "defaults": {
+        "base_quantity": 0.0,
+        "base_production": 0.0
+      },
+      "supported_verbs": ["trade", "distribute", "mobilize"],
+      "tags": ["historical", "aid"]
     }
   ]
 }

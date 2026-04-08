@@ -76,9 +76,13 @@ def social_prompt(available_policies: List[Dict[str, Any]], budget: float) -> Li
     """Return formatted policy option lines."""
     lines = [f"Budget remaining for policy selection: ${budget:.2f}"]
     for policy in available_policies:
+        domain = policy.get("policy_domain", policy.get("kind", "policy"))
+        framing = policy.get("historical_framing", "")
         lines.append(
-            f"{policy['label']}) {policy['policy_id']} [{policy['kind']}] cost=${policy['cost']:.2f}"
+            f"{policy['label']}) {policy['policy_id']} [{domain}] cost=${policy['cost']:.2f}"
         )
+        if framing:
+            lines.append(f"   {framing}")
     return lines
 
 

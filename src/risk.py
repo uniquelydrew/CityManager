@@ -11,6 +11,9 @@ RISK_PRIORITY = {
     "energy_instability": 2,
     "budget_erosion": 3,
     "unrest_spike": 4,
+    "institutional_breakdown": 5,
+    "political_stalemate": 6,
+    "public_trust_collapse": 7,
 }
 
 
@@ -41,6 +44,11 @@ def compute_risk_ranking(
     resources = state["resources"]
     population = state["population"]
     economy = state["economy"]
+    governance = state.get("governance", {})
+    politics = state.get("politics", {})
+    society = state.get("society", {})
+    services = state.get("services", {})
+    economic_conditions = state.get("economic_conditions", {})
     constants = context["constants"]
     energy_demand = context["effective_energy_demand"]
 
@@ -60,6 +68,22 @@ def compute_risk_ranking(
     food_constraint = 0.15 if any("food production" in item.lower() for item in constraint_log) else 0.0
     budget_constraint = 0.10 if economy.get("service_penalty", 0.0) > 0 else 0.0
     unrest_constraint = 0.10 if workforce_pressure > 0.0 else 0.0
+    institutional_pressure = _clamp01(
+        _resource_pressure(services.get("transport_throughput", 1.0), 0.55)
+        + services.get("repair_backlog", 0.0) * 0.4
+        + services.get("institutional_bottlenecks", 0.0) * 0.5
+        + _resource_pressure(governance.get("administrative_capacity", 1.0), 0.55)
+    )
+    political_pressure = _clamp01(
+        _resource_pressure(politics.get("coalition_stability", 1.0), 0.55)
+        + politics.get("opposition_pressure", 0.0) * 0.5
+        + politics.get("elite_resistance", 0.0) * 0.35
+    )
+    trust_pressure = _clamp01(
+        _resource_pressure(society.get("public_trust", 1.0), 0.55)
+        + society.get("class_sector_strain", 0.0) * 0.35
+        + society.get("labor_unrest", 0.0) * 0.4
+    )
 
     ranking = [
         {
@@ -114,6 +138,30 @@ def compute_risk_ranking(
                 - (0.10 if recovery_flags.get("population_recovery") else 0.0)
             ),
             "reason": "community strain follows health loss, low service quality, and workforce stress",
+        },
+        {
+            "issue_id": "institutional_breakdown",
+            "severity": _clamp01(
+                institutional_pressure
+                + (0.10 if any("throughput" in item.lower() or "distribution" in item.lower() for item in constraint_log) else 0.0)
+            ),
+            "reason": "institutional pressure reflects transport, distribution, repair backlog, and administrative weakness",
+        },
+        {
+            "issue_id": "political_stalemate",
+            "severity": _clamp01(
+                political_pressure
+                + max(0.0, economic_conditions.get("debt_pressure", 0.0) - 0.5) * 0.2
+            ),
+            "reason": "political pressure reflects weak coalition support, opposition pressure, and elite resistance",
+        },
+        {
+            "issue_id": "public_trust_collapse",
+            "severity": _clamp01(
+                trust_pressure
+                + max(0.0, services.get("hospital_pressure", 0.0) - 0.4) * 0.2
+            ),
+            "reason": "public trust pressure rises when shortages, labor conflict, and visible service strain reach households",
         },
     ]
     ranking.sort(key=lambda item: (-item["severity"], RISK_PRIORITY[item["issue_id"]]))

@@ -1,0 +1,279 @@
+{
+  "historical_case_id": "new_york_fiscal_crisis_1975",
+  "case_metadata": {
+    "title": "New York Fiscal Crisis",
+    "place": "New York City",
+    "timeframe": "1975",
+    "summary": "City leaders face collapsing credit, labor resistance, and pressure to cut services while preserving political support and basic urban stability.",
+    "reference_notes": [
+      "Modeled after the New York City fiscal crisis of 1975.",
+      "Uses adapted civic and budget indicators rather than exact municipal accounts."
+    ]
+  },
+  "world_state": {
+    "governance": {
+      "legitimacy": 0.57,
+      "administrative_capacity": 0.61,
+      "corruption_friction": 0.26,
+      "enforcement_reach": 0.52
+    },
+    "politics": {
+      "coalition_stability": 0.48,
+      "opposition_pressure": 0.59,
+      "elite_resistance": 0.41,
+      "faction_support": {
+        "city_hall": 0.6,
+        "municipal_unions": 0.47,
+        "bondholders": 0.38,
+        "neighborhood_advocates": 0.52
+      }
+    },
+    "society": {
+      "public_trust": 0.49,
+      "class_sector_strain": 0.58,
+      "displacement": 0.24,
+      "labor_unrest": 0.42,
+      "mortality_burden": 0.18
+    },
+    "economic_conditions": {
+      "price_pressure": 0.35,
+      "wage_pressure": 0.54,
+      "revenue_stability": 0.38,
+      "debt_pressure": 0.72,
+      "trade_dependence": 0.45,
+      "import_dependence": 0.34
+    },
+    "services": {
+      "transport_throughput": 0.61,
+      "distribution_capacity": 0.52,
+      "repair_backlog": 0.49,
+      "hospital_pressure": 0.43,
+      "institutional_bottlenecks": 0.58
+    }
+  },
+  "actors": [
+    {
+      "actor_id": "city_hall",
+      "display_name": "City Hall",
+      "kind": "civic_government",
+      "agenda": "Avoid default while keeping essential services politically defensible."
+    },
+    {
+      "actor_id": "municipal_unions",
+      "display_name": "Municipal Unions",
+      "kind": "labor",
+      "agenda": "Protect wages, staffing, and public services."
+    },
+    {
+      "actor_id": "bondholders",
+      "display_name": "Bondholders",
+      "kind": "financial_actor",
+      "agenda": "Restore fiscal discipline before extending more credit."
+    },
+    {
+      "actor_id": "neighborhood_advocates",
+      "display_name": "Neighborhood Advocates",
+      "kind": "civic_group",
+      "agenda": "Prevent service withdrawal from already stressed communities."
+    }
+  ],
+  "institutions": [
+    {
+      "institution_id": "transit_authority",
+      "display_name": "Transit Authority",
+      "status_indicator": "transport_throughput"
+    },
+    {
+      "institution_id": "budget_office",
+      "display_name": "Budget Office",
+      "status_indicator": "institutional_bottlenecks"
+    },
+    {
+      "institution_id": "public_hospitals",
+      "display_name": "Public Hospitals",
+      "status_indicator": "hospital_pressure"
+    }
+  ],
+  "groups": [
+    {
+      "group_id": "commuters",
+      "display_name": "Transit Riders",
+      "main_pressure": "fare changes and service reliability"
+    },
+    {
+      "group_id": "public_workers",
+      "display_name": "Public Workers",
+      "main_pressure": "wage restraint and layoffs"
+    },
+    {
+      "group_id": "low_income_neighborhoods",
+      "display_name": "Low-Income Neighborhoods",
+      "main_pressure": "service cuts and declining trust"
+    }
+  ],
+  "resources": [
+    {"resource_type_id": "water", "display_name": "Water"},
+    {"resource_type_id": "electricity", "display_name": "Power"},
+    {"resource_type_id": "food", "display_name": "Food"},
+    {"resource_type_id": "materials", "display_name": "Repair Materials"},
+    {"resource_type_id": "labor_hours", "display_name": "Labor Hours"},
+    {"resource_type_id": "tax_receipts", "display_name": "Tax Receipts"},
+    {"resource_type_id": "union_support", "display_name": "Union Support"}
+  ],
+  "indicators": [
+    {"indicator_id": "coalition_stability", "section": "politics", "display_name": "Coalition Stability", "warn_below": 0.5},
+    {"indicator_id": "debt_pressure", "section": "economic_conditions", "display_name": "Debt Pressure", "warn_above": 0.6},
+    {"indicator_id": "public_trust", "section": "society", "display_name": "Public Trust", "warn_below": 0.5},
+    {"indicator_id": "labor_unrest", "section": "society", "display_name": "Labor Unrest", "warn_above": 0.45},
+    {"indicator_id": "institutional_bottlenecks", "section": "services", "display_name": "Institutional Bottlenecks", "warn_above": 0.55}
+  ],
+  "policy_domains": [
+    "credit_negotiation",
+    "service_cuts",
+    "labor_bargaining",
+    "community_stabilization",
+    "revenue_measures"
+  ],
+  "policy_options": [
+    {
+      "policy_id": "emergency_credit_board",
+      "label": "J",
+      "kind": "political_bargaining_action",
+      "policy_domain": "credit_negotiation",
+      "cost": 130.0,
+      "stacking_mode": "unique",
+      "duration_turns": null,
+      "instant_effects": {},
+      "persistent_effects": {},
+      "actor_effects": {
+        "bondholders": 0.08,
+        "city_hall": 0.03,
+        "municipal_unions": -0.02
+      },
+      "indicator_effects": {
+        "economic_conditions.debt_pressure": -0.08,
+        "politics.coalition_stability": 0.04,
+        "services.institutional_bottlenecks": -0.03
+      },
+      "historical_framing": "Form an emergency oversight and credit arrangement to calm lenders and buy time.",
+      "explanation_text": "Credit oversight eased debt pressure but raised labor suspicion."
+    },
+    {
+      "policy_id": "wage_freeze_compact",
+      "label": "K",
+      "kind": "labor_bargaining_action",
+      "policy_domain": "labor_bargaining",
+      "cost": 100.0,
+      "stacking_mode": "unique",
+      "duration_turns": null,
+      "instant_effects": {},
+      "persistent_effects": {
+        "rule_overrides.workforce_recovery_bonus": 0.05
+      },
+      "actor_effects": {
+        "municipal_unions": -0.07,
+        "bondholders": 0.04
+      },
+      "indicator_effects": {
+        "economic_conditions.wage_pressure": -0.08,
+        "society.labor_unrest": 0.07,
+        "politics.opposition_pressure": 0.04
+      },
+      "historical_framing": "Freeze wages temporarily to signal fiscal control and stabilize negotiations.",
+      "explanation_text": "Wage restraint helped creditors but raised labor unrest."
+    },
+    {
+      "policy_id": "protect_neighborhood_clinics",
+      "label": "L",
+      "kind": "social_policy",
+      "policy_domain": "community_stabilization",
+      "cost": 150.0,
+      "stacking_mode": "add",
+      "duration_turns": 1,
+      "instant_effects": {
+        "resources.food": 8.0,
+        "resources.materials": 8.0
+      },
+      "persistent_effects": {},
+      "actor_effects": {
+        "neighborhood_advocates": 0.08,
+        "city_hall": 0.03
+      },
+      "indicator_effects": {
+        "society.public_trust": 0.05,
+        "services.hospital_pressure": -0.08,
+        "society.mortality_burden": -0.03
+      },
+      "historical_framing": "Shield neighborhood clinics and frontline services from the first round of cuts.",
+      "explanation_text": "Protecting clinics improved trust and reduced social strain."
+    },
+    {
+      "policy_id": "transit_fare_increase",
+      "label": "M",
+      "kind": "revenue_measure",
+      "policy_domain": "revenue_measures",
+      "cost": 80.0,
+      "stacking_mode": "unique",
+      "duration_turns": null,
+      "instant_effects": {},
+      "persistent_effects": {},
+      "actor_effects": {
+        "bondholders": 0.05,
+        "neighborhood_advocates": -0.05
+      },
+      "indicator_effects": {
+        "economic_conditions.revenue_stability": 0.06,
+        "society.public_trust": -0.04,
+        "society.class_sector_strain": 0.05
+      },
+      "historical_framing": "Raise fares to stabilize the transit budget despite public frustration.",
+      "explanation_text": "Fare increases improved revenue stability but hurt trust."
+    }
+  ],
+  "interaction_overrides": {},
+  "events_and_reports": [
+    {
+      "report_id": "credit_markets_alarm",
+      "title": "Credit Markets Alarm",
+      "audience": "player",
+      "trigger": {"type": "always"},
+      "body": "Credit markets remain skeptical, so every policy choice now carries a visible political and debt consequence."
+    },
+    {
+      "report_id": "bondholder_pressure_notice",
+      "title": "Bondholder Pressure",
+      "audience": "player",
+      "trigger": {
+        "type": "indicator_above",
+        "path": "economic_conditions.debt_pressure",
+        "value": 0.6
+      },
+      "body": "Lenders are signaling that further borrowing will depend on stricter oversight and restraint."
+    },
+    {
+      "report_id": "union_backlash_warning",
+      "title": "Union Backlash Warning",
+      "audience": "player",
+      "trigger": {
+        "type": "indicator_above",
+        "path": "society.labor_unrest",
+        "value": 0.45
+      },
+      "body": "Union leaders warn that austerity without bargaining will deepen strikes and service disruption."
+    }
+  ],
+  "teaching_signals": {
+    "main_skills": [
+      "budget tradeoffs",
+      "stakeholder analysis",
+      "public policy reasoning",
+      "historical interpretation"
+    ],
+    "guidance": "Players should notice that revenue and trust do not move together, and that politically feasible action can still worsen service strain."
+  },
+  "historical_notes": {
+    "mode": "close_case",
+    "provenance": "Scenario is historically grounded but mechanically adapted for deterministic play.",
+    "design_warning": "Do not encode NYC-specific facts in engine branches; keep pressure and policy specifics in case data."
+  }
+}

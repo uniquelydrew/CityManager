@@ -2,6 +2,7 @@
 
 from src.modifiers import can_select_policy
 from src.ui.formatters import (
+    case_title_text,
     current_problem_text,
     mission_text,
     policy_summary,
@@ -22,6 +23,7 @@ class UIController:
         self.refresh(initial=True)
 
     def _apply_header(self, forecast):
+        self.ui.title_label.setText(case_title_text(forecast))
         self.ui.goal_label.setText(mission_text(forecast))
         self.ui.status_label.setText(current_problem_text(forecast))
 
@@ -81,11 +83,12 @@ class UIController:
                     "Materials help reduce leaks and keep water moving."
                 )
         self.ui.action_panel.prompt_label.setText(
-            "Step 1: Read the urgent problem\n"
-            "Step 2: Choose emergency supplies and support resources\n"
-            "Step 3: Choose a service priority\n"
-            "Step 4: Choose a policy if you want one\n"
-            "Step 5: Run the turn\n\n"
+            "Step 1: Read the historical situation\n"
+            "Step 2: Review who is affected and the political constraints\n"
+            "Step 3: Choose emergency supplies and support resources\n"
+            "Step 4: Choose a service priority\n"
+            "Step 5: Choose a policy if you want one\n"
+            "Step 6: Run the turn\n\n"
             + recommendation_sentence(forecast)
         )
 

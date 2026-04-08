@@ -48,6 +48,34 @@
       "abbrev": "USD",
       "precision": 2,
       "display_scale": 1.0
+    },
+    {
+      "unit_id": "tons",
+      "display_name": "Tons",
+      "abbrev": "tons",
+      "precision": 1,
+      "display_scale": 1.0
+    },
+    {
+      "unit_id": "capacity_points",
+      "display_name": "Capacity Points",
+      "abbrev": "cap",
+      "precision": 1,
+      "display_scale": 1.0
+    },
+    {
+      "unit_id": "trust_points",
+      "display_name": "Trust Points",
+      "abbrev": "trust",
+      "precision": 2,
+      "display_scale": 1.0
+    },
+    {
+      "unit_id": "support_points",
+      "display_name": "Support Points",
+      "abbrev": "support",
+      "precision": 2,
+      "display_scale": 1.0
     }
   ]
 }

@@ -12,6 +12,10 @@ def empty_outcome() -> Dict[str, Any]:
         "recovery_effects": [],
         "population_effects": [],
         "economy_effects": [],
+        "political_effects": [],
+        "stakeholder_effects": [],
+        "institution_effects": [],
+        "case_reports": [],
         "risk_changes": [],
         "remaining_risks": [],
         "outcome_chain": [],
@@ -23,6 +27,10 @@ def empty_outcome() -> Dict[str, Any]:
         "constraint_preview": [],
         "interaction_ledger": [],
         "explanation_facts": [],
+        "historical_situation": "",
+        "political_constraints": [],
+        "stakeholder_snapshot": [],
+        "system_pressures": [],
     }
 
 
