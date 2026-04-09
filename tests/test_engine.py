@@ -6,9 +6,13 @@ from src.case_loader import load_cases
 from src.engine import SimulationEngine
 from src.interaction_registry import InteractionRegistry
 from src.modifiers import activate_policy, can_select_policy, decrement_temporary_effects
+from src.ontology_loader import load_ontology
+from src.presentation_loader import load_presentation_profile, load_presentation_profiles
 from src.resource_registry import ResourceRegistry
 from src.resource_utils import normalize_resource_record, stock
 from src.risk import compute_risk_ranking
+from src.scenario_loader import load_scenario_pack, load_scenario_packs
+from src.view_resolver import resolve_view_model
 
 
 class SimulationEngineTests(unittest.TestCase):
@@ -169,25 +173,97 @@ class SimulationEngineTests(unittest.TestCase):
         self.assertEqual(registry.runtime_key("electricity"), "energy")
         self.assertEqual(registry.get("workforce_capacity")["resource_type_id"], "labor_hours")
 
-    def test_case_loader_finds_two_historical_cases(self) -> None:
+    def test_case_loader_finds_available_case_packs(self) -> None:
         cases = load_cases(self.data_dir)
         self.assertIn("berlin_airlift_1948", cases)
         self.assertIn("new_york_fiscal_crisis_1975", cases)
+        self.assertIn("camelot_winter_crisis", cases)
+        self.assertEqual(cases["camelot_winter_crisis"]["historical_notes"]["mode"], "legendary_case")
+
+    def test_ontology_loads_and_cross_references(self) -> None:
+        ontology = load_ontology(self.data_dir)
+        self.assertIn("energy", ontology.systems)
+        self.assertIn("water_delivery", ontology.services)
+        self.assertIn("electricity", ontology.resources)
+        self.assertIn("energy_instability", ontology.risks)
+
+    def test_scenario_pack_loader_supports_legacy_and_reference_packs(self) -> None:
+        legacy_cases = load_cases(self.data_dir)
+        ontology = load_ontology(self.data_dir).to_context()
+        packs = load_scenario_packs(self.data_dir, ontology=ontology, legacy_cases=legacy_cases)
+        self.assertIn("berlin_airlift_1948", packs)
+        self.assertIn("camelot_winter_crisis", packs)
+        self.assertIn("new_york_fiscal_crisis_1975", packs)
+        self.assertIn("arcane_city_ley_failure", packs)
+        self.assertTrue(packs["berlin_airlift_1948"]["policy_options"])
+        self.assertTrue(packs["arcane_city_ley_failure"]["binding"]["systems"]["energy"]["label"])
+
+    def test_presentation_profiles_load(self) -> None:
+        profiles = load_presentation_profiles(self.data_dir)
+        self.assertIn("standard", profiles)
+        self.assertIn("debug", profiles)
+        self.assertFalse(profiles["standard"]["text_policy"]["allow_canonical_keys"])
+        self.assertTrue(load_presentation_profile(self.data_dir, "debug")["panel_visibility"]["show_system_keys"])
+
+    def test_resolver_renders_canonical_energy_differently_by_scenario(self) -> None:
+        ontology = load_ontology(self.data_dir).to_context()
+        legacy_cases = load_cases(self.data_dir)
+        profiles = load_presentation_profiles(self.data_dir)
+        berlin = load_scenario_pack(self.data_dir, "berlin_airlift_1948", ontology=ontology, legacy_cases=legacy_cases)
+        camelot = load_scenario_pack(self.data_dir, "camelot_winter_crisis", ontology=ontology, legacy_cases=legacy_cases)
+        arcane = load_scenario_pack(self.data_dir, "arcane_city_ley_failure", ontology=ontology, legacy_cases=legacy_cases)
+        berlin_view = resolve_view_model(ontology, berlin, profiles["standard"], self.engine.state)
+        camelot_view = resolve_view_model(ontology, camelot, profiles["standard"], self.engine.state)
+        arcane_view = resolve_view_model(ontology, arcane, profiles["standard"], self.engine.state)
+        self.assertEqual(berlin_view["systems"]["energy"]["display_label"], "Electricity")
+        self.assertEqual(camelot_view["systems"]["energy"]["display_label"], "Power")
+        self.assertEqual(arcane_view["systems"]["energy"]["display_label"], "Arcane Power")
+
+    def test_standard_resolved_view_avoids_raw_canonical_keys(self) -> None:
+        forecast = self.engine.build_forecast(self.engine.state)
+        resolved = forecast["resolved_view"]
+        self.assertEqual(resolved["presentation_profile_key"], "standard")
+        self.assertNotEqual(resolved["systems"]["energy"]["display_label"], "energy")
+        self.assertEqual(
+            resolved["panel_text"]["current_problem_label"],
+            self.engine.active_case["binding"]["ui_text"]["panels"]["current_problem_label"],
+        )
+        glossary_terms = {entry["term"] for entry in resolved["glossary_entries"]}
+        self.assertIn(self.engine.active_case["binding"]["systems"]["energy"]["label"], glossary_terms)
 
     def test_case_policy_affects_politics_and_society(self) -> None:
         state = self.engine.clone_state(self.engine.state)
         actions = self.blank_actions()
-        actions["selected_policy_id"] = "night_unloading_compact"
+        actions["selected_policy_id"] = self.engine.active_case["policy_options"][0]["policy_id"]
         next_state, outcome = self.engine.simulate_turn(state, actions, False)
-        self.assertNotEqual(
-            next_state["politics"]["coalition_stability"],
-            state["politics"]["coalition_stability"],
+        changed = (
+            next_state["politics"] != state["politics"]
+            or next_state["society"] != state["society"]
+            or next_state["governance"] != state["governance"]
         )
+        self.assertTrue(changed)
         self.assertTrue(outcome["stakeholder_effects"] or outcome["political_effects"])
 
     def test_case_reports_trigger_in_forecast(self) -> None:
         forecast = self.engine.build_forecast(self.engine.state)
         self.assertTrue(forecast["case_reports"])
+
+    def test_step_returns_structured_journal_entry(self) -> None:
+        result = self.engine.step(
+            {
+                "energy": 5.0,
+                "water": 0.0,
+                "food": 0.0,
+                "fuel": 5.0,
+                "materials": 0.0,
+                "allocation_priority": "stabilize_power",
+                "policy_id": None,
+            }
+        )
+        self.assertIn("journal", result)
+        self.assertEqual(result["journal"]["entry_type"], "turn_result")
+        self.assertIn("urgent_issue", result["journal"])
+        self.assertIn("actions_taken", result["journal"])
 
     def test_interaction_registry_sorts_deterministically(self) -> None:
         registry = InteractionRegistry.load(self.data_dir)
