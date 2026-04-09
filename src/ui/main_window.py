@@ -20,6 +20,7 @@ from src.ui.controller import UIController
 from src.ui.panels.action_panel import ActionPanel
 from src.ui.panels.forecast_panel import ForecastPanel
 from src.ui.panels.log_panel import LogPanel
+from src.ui.panels.support_rail import SupportRail
 from src.ui.panels.system_dashboard import SystemDashboard
 
 
@@ -48,20 +49,27 @@ class MainWindow(QMainWindow):
     def _build_top_bar(self):
         self.top_bar = QHBoxLayout()
         self.title_label = QLabel("Town Recovery Simulation")
-        self.goal_label = QLabel("Goal: keep the town stable for 2 safe turns.")
-        self.goal_note_label = QLabel(
-            "A safe turn means no critical shortages and the budget stays healthy."
-        )
-        self.status_label = QLabel("Current urgent problem: loading...")
-        for label in [self.goal_label, self.goal_note_label, self.status_label]:
+        self.role_label = QLabel("You are coordinating emergency city response.")
+        self.goal_label = QLabel("Goal: loading...")
+        self.progress_label = QLabel("Progress: loading...")
+        self.skills_label = QLabel("GED skills: loading...")
+        self.status_label = QLabel("Urgent issue: loading...")
+        for label in [
+            self.role_label,
+            self.goal_label,
+            self.progress_label,
+            self.skills_label,
+            self.status_label,
+        ]:
             label.setWordWrap(True)
         self.header_text = QVBoxLayout()
         self.header_text.addWidget(self.title_label)
+        self.header_text.addWidget(self.role_label)
+        self.header_text.addWidget(self.status_label)
         self.header_text.addWidget(self.goal_label)
-        self.header_text.addWidget(self.goal_note_label)
+        self.header_text.addWidget(self.progress_label)
+        self.header_text.addWidget(self.skills_label)
         self.top_bar.addLayout(self.header_text)
-        self.top_bar.addStretch(1)
-        self.top_bar.addWidget(self.status_label)
         self.root_layout.addLayout(self.top_bar)
 
     def _build_body(self):
@@ -72,6 +80,7 @@ class MainWindow(QMainWindow):
         self.center_panel = QFrame()
         self.right_panel = QFrame()
         self.bottom_panel = QFrame()
+        self.right_splitter = QSplitter(Qt.Orientation.Vertical)
 
         self.top_content = QWidget()
         self.top_grid = QGridLayout(self.top_content)
@@ -80,10 +89,10 @@ class MainWindow(QMainWindow):
         self.top_grid.setVerticalSpacing(12)
         self.top_grid.addWidget(self.left_panel, 0, 0)
         self.top_grid.addWidget(self.center_panel, 0, 1)
-        self.top_grid.addWidget(self.right_panel, 0, 2)
+        self.top_grid.addWidget(self.right_splitter, 0, 2)
         self.top_grid.setColumnStretch(0, 2)
-        self.top_grid.setColumnStretch(1, 4)
-        self.top_grid.setColumnStretch(2, 2)
+        self.top_grid.setColumnStretch(1, 5)
+        self.top_grid.setColumnStretch(2, 3)
         self.top_grid.setRowStretch(0, 1)
 
         self.body_splitter.addWidget(self.top_content)
@@ -97,6 +106,7 @@ class MainWindow(QMainWindow):
         self.dashboard = SystemDashboard()
         self.forecast = ForecastPanel()
         self.action_panel = ActionPanel()
+        self.support_rail = SupportRail()
         self.log = LogPanel()
 
         self.left_panel.setLayout(QVBoxLayout())
@@ -114,6 +124,11 @@ class MainWindow(QMainWindow):
         self.right_panel.setLayout(QVBoxLayout())
         self.right_panel.layout().setContentsMargins(0, 0, 0, 0)
         self.right_panel.layout().addWidget(self.right_scroll)
+        self.right_splitter.addWidget(self.right_panel)
+        self.right_splitter.addWidget(self.support_rail)
+        self.right_splitter.setStretchFactor(0, 5)
+        self.right_splitter.setStretchFactor(1, 2)
+        self.right_splitter.setChildrenCollapsible(False)
 
         self.bottom_panel.setLayout(QVBoxLayout())
         self.bottom_panel.layout().setContentsMargins(0, 0, 0, 0)
@@ -125,21 +140,21 @@ class MainWindow(QMainWindow):
         width = self.width()
         self.top_grid.removeWidget(self.left_panel)
         self.top_grid.removeWidget(self.center_panel)
-        self.top_grid.removeWidget(self.right_panel)
+        self.top_grid.removeWidget(self.right_splitter)
 
         if width < 1150:
             self.top_grid.addWidget(self.left_panel, 0, 0, 1, 2)
             self.top_grid.addWidget(self.center_panel, 1, 0, 1, 2)
-            self.top_grid.addWidget(self.right_panel, 2, 0, 1, 2)
+            self.top_grid.addWidget(self.right_splitter, 2, 0, 1, 2)
             self.top_grid.setColumnStretch(0, 1)
             self.top_grid.setColumnStretch(1, 1)
         else:
             self.top_grid.addWidget(self.left_panel, 0, 0)
             self.top_grid.addWidget(self.center_panel, 0, 1)
-            self.top_grid.addWidget(self.right_panel, 0, 2)
+            self.top_grid.addWidget(self.right_splitter, 0, 2)
             self.top_grid.setColumnStretch(0, 2)
-            self.top_grid.setColumnStretch(1, 4)
-            self.top_grid.setColumnStretch(2, 2)
+            self.top_grid.setColumnStretch(1, 5)
+            self.top_grid.setColumnStretch(2, 3)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)

@@ -15,6 +15,8 @@ class ActionPanel(QWidget):
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
 
         self.unit_costs = {"energy": 5.0, "water": 6.0, "food": 4.0, "fuel": 3.0, "materials": 4.0}
         self.available_budget = 200.0
@@ -26,12 +28,31 @@ class ActionPanel(QWidget):
             "Step 3: Run the turn"
         )
         self.prompt_label.setWordWrap(True)
+        self.recommended_focus_label = QLabel("Recommended focus: loading...")
+        self.recommended_focus_label.setWordWrap(True)
 
+        self.restore_power_label = QLabel("Restore Power")
+        self.restore_power_help = QLabel("Use emergency energy or fuel to prevent pump and service failures.")
+        self.restore_power_help.setWordWrap(True)
+
+        self.energy_label = QLabel("Import Emergency Power")
         self.energy_input = self._make_spinbox()
-        self.water_input = self._make_spinbox()
-        self.food_input = self._make_spinbox()
+        self.fuel_label = QLabel("Import Emergency Fuel")
         self.fuel_input = self._make_spinbox()
+
+        self.protect_water_label = QLabel("Protect Water")
+        self.protect_water_help = QLabel("Use emergency water or materials to keep water moving and reduce leaks.")
+        self.protect_water_help.setWordWrap(True)
+        self.water_label = QLabel("Import Emergency Water")
+        self.water_input = self._make_spinbox()
+        self.materials_label = QLabel("Send Repair Materials")
         self.materials_input = self._make_spinbox()
+
+        self.secure_food_label = QLabel("Secure Food Supply")
+        self.secure_food_help = QLabel("Emergency food helps immediately while water and power recover.")
+        self.secure_food_help.setWordWrap(True)
+        self.food_label = QLabel("Import Emergency Food")
+        self.food_input = self._make_spinbox()
 
         self.energy_help = QLabel("Cost: $5 per unit\nHelps reduce power shortage risk.")
         self.water_help = QLabel("Cost: $6 per unit\nHelps protect water service.")
@@ -41,11 +62,11 @@ class ActionPanel(QWidget):
         for label in [self.energy_help, self.water_help, self.food_help, self.fuel_help, self.materials_help]:
             label.setWordWrap(True)
 
-        self.energy_cost_label = QLabel("Current purchase: 0 units = $0")
-        self.water_cost_label = QLabel("Current purchase: 0 units = $0")
-        self.food_cost_label = QLabel("Current purchase: 0 units = $0")
-        self.fuel_cost_label = QLabel("Current purchase: 0 units = $0")
-        self.materials_cost_label = QLabel("Current purchase: 0 units = $0")
+        self.energy_cost_label = QLabel("0 units | $0")
+        self.water_cost_label = QLabel("0 units | $0")
+        self.food_cost_label = QLabel("0 units | $0")
+        self.fuel_cost_label = QLabel("0 units | $0")
+        self.materials_cost_label = QLabel("0 units | $0")
 
         self.priority_label = QLabel("Choose a Service Priority")
         self.priority_input = QComboBox()
@@ -59,30 +80,42 @@ class ActionPanel(QWidget):
         self.total_cost_label = QLabel("Emergency supply spend: $0")
         self.policy_budget_label = QLabel("Policy spend from town budget: $0")
         self.remaining_budget_label = QLabel("Emergency supply budget left: $200")
+        self.commit_summary_label = QLabel(
+            "Commit summary:\nSpend: $0\nLikely benefit: none selected yet.\nMain remaining risk: loading..."
+        )
+        self.commit_summary_label.setWordWrap(True)
         self.submit_button = QPushButton("Run Turn")
 
-        layout.addWidget(QLabel("Your Choices"))
+        self.section_title = QLabel("Your Choices")
+        layout.addWidget(self.section_title)
         layout.addWidget(self.prompt_label)
-        layout.addWidget(QLabel("Buy Emergency Energy"))
+        layout.addWidget(self.recommended_focus_label)
+        layout.addWidget(self.restore_power_label)
+        layout.addWidget(self.restore_power_help)
+        layout.addWidget(self.energy_label)
         layout.addWidget(self.energy_input)
         layout.addWidget(self.energy_help)
         layout.addWidget(self.energy_cost_label)
-        layout.addWidget(QLabel("Buy Emergency Water"))
-        layout.addWidget(self.water_input)
-        layout.addWidget(self.water_help)
-        layout.addWidget(self.water_cost_label)
-        layout.addWidget(QLabel("Buy Emergency Food"))
-        layout.addWidget(self.food_input)
-        layout.addWidget(self.food_help)
-        layout.addWidget(self.food_cost_label)
-        layout.addWidget(QLabel("Buy Emergency Fuel"))
+        layout.addWidget(self.fuel_label)
         layout.addWidget(self.fuel_input)
         layout.addWidget(self.fuel_help)
         layout.addWidget(self.fuel_cost_label)
-        layout.addWidget(QLabel("Buy Emergency Materials"))
+        layout.addWidget(self.protect_water_label)
+        layout.addWidget(self.protect_water_help)
+        layout.addWidget(self.water_label)
+        layout.addWidget(self.water_input)
+        layout.addWidget(self.water_help)
+        layout.addWidget(self.water_cost_label)
+        layout.addWidget(self.materials_label)
         layout.addWidget(self.materials_input)
         layout.addWidget(self.materials_help)
         layout.addWidget(self.materials_cost_label)
+        layout.addWidget(self.secure_food_label)
+        layout.addWidget(self.secure_food_help)
+        layout.addWidget(self.food_label)
+        layout.addWidget(self.food_input)
+        layout.addWidget(self.food_help)
+        layout.addWidget(self.food_cost_label)
         layout.addWidget(self.priority_label)
         layout.addWidget(self.priority_input)
         layout.addWidget(self.policy_label)
@@ -92,6 +125,7 @@ class ActionPanel(QWidget):
         layout.addWidget(self.total_cost_label)
         layout.addWidget(self.policy_budget_label)
         layout.addWidget(self.remaining_budget_label)
+        layout.addWidget(self.commit_summary_label)
         layout.addWidget(self.submit_button)
         layout.addStretch(1)
 
@@ -151,6 +185,26 @@ class ActionPanel(QWidget):
         self.policy_input.blockSignals(False)
         self._update_cost_summary()
 
+    def set_recommendation(self, text):
+        self.recommended_focus_label.setText(f"Recommended focus: {text}")
+
+    def set_commit_summary(self, lines):
+        self.commit_summary_label.setText("Commit summary:\n" + "\n".join(lines))
+
+    def set_copy(self, copy: dict, resources: dict):
+        self.section_title.setText(copy.get("choose_label", "Your Choices"))
+        self.submit_button.setText(copy.get("confirm_label", "Run Turn"))
+        energy_label = resources.get("electricity", {}).get("display_label", "Power")
+        water_label = resources.get("water", {}).get("display_label", "Water")
+        food_label = resources.get("food", {}).get("display_label", "Food")
+        fuel_label = resources.get("fuel", {}).get("display_label", "Fuel")
+        materials_label = resources.get("materials", {}).get("display_label", "Materials")
+        self.energy_label.setText(f"Import Emergency {energy_label}")
+        self.fuel_label.setText(f"Import Emergency {fuel_label}")
+        self.water_label.setText(f"Import Emergency {water_label}")
+        self.food_label.setText(f"Import Emergency {food_label}")
+        self.materials_label.setText(f"Send {materials_label}")
+
     def selected_policy(self):
         return self.policy_input.currentData()
 
@@ -165,19 +219,19 @@ class ActionPanel(QWidget):
         emergency_total = energy_total + water_total + food_total + fuel_total + materials_total
         remaining = self.available_budget - emergency_total
         self.energy_cost_label.setText(
-            f"Current purchase: {self.energy_input.value()} units = ${energy_total:.0f}"
+            f"{self.energy_input.value()} units | ${energy_total:.0f}"
         )
         self.water_cost_label.setText(
-            f"Current purchase: {self.water_input.value()} units = ${water_total:.0f}"
+            f"{self.water_input.value()} units | ${water_total:.0f}"
         )
         self.food_cost_label.setText(
-            f"Current purchase: {self.food_input.value()} units = ${food_total:.0f}"
+            f"{self.food_input.value()} units | ${food_total:.0f}"
         )
         self.fuel_cost_label.setText(
-            f"Current purchase: {self.fuel_input.value()} units = ${fuel_total:.0f}"
+            f"{self.fuel_input.value()} units | ${fuel_total:.0f}"
         )
         self.materials_cost_label.setText(
-            f"Current purchase: {self.materials_input.value()} units = ${materials_total:.0f}"
+            f"{self.materials_input.value()} units | ${materials_total:.0f}"
         )
         if selected_policy:
             self.policy_help.setText(selected_policy["summary"])

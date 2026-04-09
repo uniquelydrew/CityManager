@@ -1,7 +1,14 @@
 from PySide6.QtWidgets import QLabel, QProgressBar, QVBoxLayout, QWidget
 
 from src.resource_utils import stock
-from src.ui.formatters import active_policy_text, case_title_text, state_status_snapshot, title_case_label
+from src.ui.formatters import (
+    active_policy_text,
+    case_title_text,
+    goal_progress_text,
+    risk_label,
+    state_status_snapshot,
+    title_case_label,
+)
 
 
 class SystemDashboard(QWidget):
@@ -50,22 +57,27 @@ class SystemDashboard(QWidget):
 
     def update(self, state, forecast):
         statuses = state_status_snapshot(state, forecast)
+        resolved_systems = forecast.get("resolved_view", {}).get("systems", {})
+        water_label = resolved_systems.get("water", {}).get("short_label", "Water")
+        energy_label = resolved_systems.get("energy", {}).get("short_label", "Energy")
+        food_label = resolved_systems.get("food", {}).get("short_label", "Food")
+        health_label = resolved_systems.get("health", {}).get("short_label", "Health")
+        trust_label = resolved_systems.get("trust", {}).get("short_label", "Trust")
+        legitimacy_label = resolved_systems.get("legitimacy", {}).get("short_label", "Legitimacy")
         self.case_title.setText(case_title_text(forecast))
         self.water["bar"].setValue(int(max(0, min(100, stock(state["resources"], "water")))))
         self.energy["bar"].setValue(int(max(0, min(100, stock(state["resources"], "energy")))))
         self.food["bar"].setValue(int(max(0, min(100, stock(state["resources"], "food")))))
         self.health["bar"].setValue(int(max(0, min(100, state["population"]["health"] * 100))))
-        self.water["label"].setText(f"Water: {stock(state['resources'], 'water'):.0f} | {statuses['water']}")
-        self.energy["label"].setText(f"Energy: {stock(state['resources'], 'energy'):.0f} | {statuses['energy']}")
-        self.food["label"].setText(f"Food: {stock(state['resources'], 'food'):.0f} | {statuses['food']}")
+        self.water["label"].setText(f"{water_label}: {stock(state['resources'], 'water'):.0f} | {statuses['water']}")
+        self.energy["label"].setText(f"{energy_label}: {stock(state['resources'], 'energy'):.0f} | {statuses['energy']}")
+        self.food["label"].setText(f"{food_label}: {stock(state['resources'], 'food'):.0f} | {statuses['food']}")
         self.health["label"].setText(
-            f"Health: {state['population']['health'] * 100:.0f} | {statuses['health']}"
+            f"{health_label}: {state['population']['health'] * 100:.0f} | {statuses['health']}"
         )
         self.budget.setText(f"Budget: ${state['economy']['budget']:.2f}")
         self.turn.setText(f"Turn: {state['telemetry'].get('turn', 1)}")
-        self.streak.setText(
-            f"Goal progress: {state['telemetry'].get('stable_turn_streak', 0)} of 2 safe turns"
-        )
+        self.streak.setText(goal_progress_text(state, forecast))
         self.supporting.setText(
             f"Fuel: {stock(state['resources'], 'fuel'):.0f} | "
             f"Materials: {stock(state['resources'], 'materials'):.0f} | "
@@ -73,14 +85,14 @@ class SystemDashboard(QWidget):
         )
         self.active_policies.setText(active_policy_text(state))
         self.civic_status.setText(
-            f"Legitimacy: {state['governance']['legitimacy']:.2f} | "
-            f"Trust: {state['society']['public_trust']:.2f} | "
+            f"{legitimacy_label}: {state['governance']['legitimacy']:.2f} | "
+            f"{trust_label}: {state['society']['public_trust']:.2f} | "
             f"Coalition: {state['politics']['coalition_stability']:.2f}"
         )
         if forecast["risk_ranking"]:
             top = forecast["risk_ranking"][0]
             self.status_summary.setText(
-                f"Most urgent problem: {title_case_label(top['issue_id'])}"
+                f"Most urgent problem: {risk_label(top['issue_id'], forecast)}"
             )
         else:
             self.status_summary.setText("Most urgent problem: none")

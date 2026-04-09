@@ -3,15 +3,13 @@ from PySide6.QtWidgets import QLabel, QPlainTextEdit, QSizePolicy, QSplitter, QV
 
 from src.ui.formatters import (
     affected_group_lines,
-    consequence_sentence,
-    historical_situation_text,
-    improvement_lines,
+    causal_chain_lines,
+    delta_summary_lines,
+    do_nothing_lines,
+    immediate_crisis_lines,
     outlook_lines,
     political_constraint_lines,
-    resource_flow_lines,
     system_pressure_lines,
-    top_risk_cards,
-    urgent_problem_sentence,
 )
 
 
@@ -24,15 +22,24 @@ class ForecastPanel(QWidget):
 
         self.splitter = QSplitter(Qt.Orientation.Vertical)
 
-        self.problem = self._make_card("Historical Situation", 90)
-        self.goal = self._make_card("What Happens Next", 140)
-        self.flow = self._make_card("Power and Supply Flow", 140)
+        self.problem = self._make_card("Immediate Crisis", 150)
+        self.delta = self._make_card("What Changed Since Last Turn", 100)
+        self.goal = self._make_card("What Happens Next", 130)
+        self.consequence = self._make_card("If You Do Nothing", 90)
         self.links = self._make_card("Who Is Affected", 120)
-        self.improves = self._make_card("Political Constraints", 110)
-        self.pressures = self._make_card("System Pressures", 110)
-        self.risks = self._make_card("Urgent Problems and Responses", 150)
+        self.causes = self._make_card("Why This Is Happening", 110)
+        self.pressures = self._make_card("Political and System Pressures", 120)
 
-        for card in [self.problem, self.goal, self.flow, self.links, self.improves, self.pressures, self.risks]:
+        self.card_containers = {}
+        for name, card in [
+            ("problem", self.problem),
+            ("delta", self.delta),
+            ("goal", self.goal),
+            ("consequence", self.consequence),
+            ("links", self.links),
+            ("causes", self.causes),
+            ("pressures", self.pressures),
+        ]:
             container = QWidget()
             container_layout = QVBoxLayout(container)
             container_layout.setContentsMargins(0, 0, 0, 0)
@@ -40,6 +47,7 @@ class ForecastPanel(QWidget):
             container_layout.addWidget(card["label"])
             container_layout.addWidget(card["body"])
             self.splitter.addWidget(container)
+            self.card_containers[name] = container
         self.splitter.setStretchFactor(0, 1)
         self.splitter.setStretchFactor(1, 2)
         self.splitter.setStretchFactor(2, 2)
@@ -57,17 +65,35 @@ class ForecastPanel(QWidget):
         body.setMaximumBlockCount(200)
         return {"label": label, "body": body}
 
-    def update(self, forecast):
+    def set_post_turn_mode(self, has_result):
+        self.card_containers["delta"].setVisible(has_result)
+        self.delta["label"].setVisible(has_result)
+        self.delta["body"].setVisible(has_result)
+        self.problem["body"].setMinimumHeight(150 if not has_result else 120)
+
+    def update(self, forecast, result=None):
+        panel_text = forecast.get("resolved_view", {}).get("panel_text", {})
+        self.problem["label"].setText(panel_text.get("current_problem_label", "Immediate Crisis"))
+        self.delta["label"].setText(panel_text.get("what_changed_label", "What Changed Since Last Turn"))
+        self.goal["label"].setText(panel_text.get("what_happens_next_label", "What Happens Next"))
+        self.consequence["label"].setText(panel_text.get("if_you_do_nothing_label", "If You Do Nothing"))
+        self.links["label"].setText(panel_text.get("who_is_affected_label", "Who Is Affected"))
+        self.causes["label"].setText(panel_text.get("why_this_is_happening_label", "Why This Is Happening"))
+        self.pressures["label"].setText(panel_text.get("system_pressures_label", "Political and System Pressures"))
         self.problem["body"].setPlainText(
-            historical_situation_text(forecast) + "\n" + urgent_problem_sentence(forecast)
+            "\n".join(immediate_crisis_lines(forecast))
+        )
+        self.delta["body"].setPlainText(
+            "\n".join(delta_summary_lines(result, forecast))
         )
         self.goal["body"].setPlainText(
             "\n".join(outlook_lines(forecast)) or "No next-turn forecast is available."
         )
-        self.flow["body"].setPlainText("\n".join(resource_flow_lines(forecast)))
+        self.consequence["body"].setPlainText("\n".join(do_nothing_lines(forecast)))
         self.links["body"].setPlainText("\n".join(affected_group_lines(forecast)))
-        self.improves["body"].setPlainText("\n".join(political_constraint_lines(forecast)))
-        self.pressures["body"].setPlainText("\n".join(system_pressure_lines(forecast)))
-        self.risks["body"].setPlainText(
-            "\n\n".join(top_risk_cards(forecast) + ["\n".join(improvement_lines(forecast))])
+        self.causes["body"].setPlainText(
+            "\n".join(causal_chain_lines(forecast))
         )
+        self.pressures["body"].setPlainText("\n".join(system_pressure_lines(forecast)))
+        self.pressures["body"].appendPlainText("")
+        self.pressures["body"].appendPlainText("\n".join(political_constraint_lines(forecast)))

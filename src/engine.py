@@ -36,6 +36,8 @@ from src.modifiers import (
 from src.population import apply_unrest, clamp, recover_health
 from src.reports import generate_report_text, issue_label
 from src.interaction_registry import InteractionRegistry
+from src.ontology_loader import load_ontology
+from src.presentation_loader import load_presentation_profiles
 from src.resource_registry import ResourceRegistry
 from src.resource_utils import (
     add_stock,
@@ -52,8 +54,10 @@ from src.resource_utils import (
     stock,
 )
 from src.risk import compute_risk_ranking
+from src.scenario_loader import load_scenario_packs
 from src.units import load_units
 from src.verbs import run_allocate, run_consume, run_decay, run_produce, run_repair, run_transform
+from src.view_resolver import resolve_view_model
 
 
 State = Dict[str, Any]
@@ -69,8 +73,18 @@ class SimulationEngine:
         self.scenario = self._load_json("town_recovery_v2.json")
         self.dependency_rules = self._load_json("dependency_rules.json")
         self.base_policies_data = self._load_json("policies.json")
-        self.cases = load_cases(data_dir)
-        self.active_case = self.cases[self.scenario["active_case_id"]]
+        self.ontology = load_ontology(data_dir)
+        self.presentation_profiles = load_presentation_profiles(data_dir)
+        self.presentation_profile_key = self.scenario.get("presentation_profile_key", "standard")
+        self.presentation_profile = self.presentation_profiles[self.presentation_profile_key]
+        self.legacy_cases = load_cases(data_dir)
+        self.scenario_packs = load_scenario_packs(
+            data_dir,
+            ontology=self.ontology.to_context(),
+            legacy_cases=self.legacy_cases,
+        )
+        self.cases = self.scenario_packs
+        self.active_case = self.scenario_packs[self.scenario["active_case_id"]]
         self.policies_data = {
             "policies": list(self.active_case.get("policy_options", []))
             + list(self.base_policies_data.get("policies", []))
@@ -311,6 +325,11 @@ class SimulationEngine:
             "resource_definitions": {item["resource_type_id"]: item for item in self.resource_registry.all()},
             "interactions": self.interaction_registry.all(),
             "units": self.units,
+            "ontology": self.ontology.to_context(),
+            "scenario_id": self.active_case["scenario_id"],
+            "scenario_pack": self.active_case,
+            "presentation_profile_key": self.presentation_profile_key,
+            "presentation_profile": self.presentation_profile,
             "historical_case": self.active_case,
             "case_metadata": self.active_case.get("case_metadata", {}),
             "actors": self.active_case.get("actors", []),
@@ -361,6 +380,14 @@ class SimulationEngine:
             forecast["report_text"] = f"{generic_report} {report_intro}".strip()
         else:
             forecast["report_text"] = generic_report
+        forecast["resolved_view"] = resolve_view_model(
+            self.ontology.to_context(),
+            self.active_case,
+            self.presentation_profile,
+            state,
+            forecast,
+        )
+        forecast["context"]["resolved_view"] = forecast["resolved_view"]
         return forecast
 
     def display_forecast(self, forecast: Dict[str, Any]) -> None:
@@ -541,6 +568,70 @@ class SimulationEngine:
             "materials": float(actions.get("materials", 0.0)),
         }
 
+    def _player_risk_label(self, issue_id: str) -> str:
+        risk_binding = self.active_case.get("binding", {}).get("risks", {}).get(issue_id, {})
+        return risk_binding.get("label", issue_id.replace("_", " ").title())
+
+    def build_startup_journal(self) -> Dict[str, Any]:
+        forecast = self.build_forecast(self.state)
+        top = forecast["risk_ranking"][0] if forecast["risk_ranking"] else None
+        return {
+            "scenario_title": forecast["context"].get("case_metadata", {}).get("title", "Town Recovery Simulation"),
+            "turn": 0,
+            "entry_type": "startup",
+            "urgent_issue": self._player_risk_label(top["issue_id"]) if top else "No urgent issue",
+            "actions_taken": [],
+            "policy_selected": None,
+            "priority_selected": None,
+            "key_changes": [forecast["context"].get("case_metadata", {}).get("summary", "")],
+            "why_it_changed": self._case_pressure_lines(self.state)[:2],
+            "remaining_risk": self._player_risk_label(top["issue_id"]) if top else "No major remaining risk",
+            "historical_note": forecast["case_reports"][0]["body"] if forecast.get("case_reports") else "",
+            "skill_tags": list(self.active_case.get("teaching_signals", {}).get("main_skills", [])),
+            "affected_groups": self._affected_group_lines(self.state)[:3],
+        }
+
+    def _build_turn_journal_entry(
+        self,
+        forecast: Dict[str, Any],
+        full_actions: Dict[str, Any],
+        outcome: OutcomeReport,
+    ) -> Dict[str, Any]:
+        top = forecast["risk_ranking"][0] if forecast["risk_ranking"] else None
+        purchases = full_actions.get("resource_purchases", {})
+        actions_taken = [
+            name.replace("_", " ")
+            for name, amount in purchases.items()
+            if float(amount) > 0.0
+        ]
+        key_changes = []
+        for section in ("dependency_effects", "recovery_effects", "economy_effects", "political_effects", "stakeholder_effects"):
+            if outcome.get(section):
+                key_changes.extend(outcome[section][:2])
+                break
+        why_it_changed = []
+        for section in ("institution_effects", "dependency_effects", "case_reports"):
+            if outcome.get(section):
+                why_it_changed.extend(outcome[section][:2])
+                break
+        historical_note = outcome.get("case_reports", [""])[0] if outcome.get("case_reports") else ""
+        remaining_risk = outcome.get("remaining_risks", [""])
+        return {
+            "scenario_title": forecast["context"].get("case_metadata", {}).get("title", "Town Recovery Simulation"),
+            "turn": max(1, self.state["telemetry"].get("turn", 1) - 1),
+            "entry_type": "turn_result",
+            "urgent_issue": self._player_risk_label(top["issue_id"]) if top else "No urgent issue",
+            "actions_taken": actions_taken,
+            "policy_selected": full_actions.get("selected_policy_id"),
+            "priority_selected": full_actions.get("allocation_priority"),
+            "key_changes": key_changes,
+            "why_it_changed": why_it_changed,
+            "remaining_risk": remaining_risk[0] if remaining_risk else "",
+            "historical_note": historical_note,
+            "skill_tags": list(self.active_case.get("teaching_signals", {}).get("main_skills", [])),
+            "affected_groups": self._affected_group_lines(self.state)[:3],
+        }
+
     def step(self, actions: Dict[str, float]) -> Dict[str, Any]:
         forecast = self.build_forecast(self.state)
         context = forecast["context"]
@@ -566,11 +657,13 @@ class SimulationEngine:
         self.last_forecast = self.build_forecast(self.state)
         self.last_outcome = outcome
         top_risks = self.last_forecast["risk_ranking"][:3]
+        journal = self._build_turn_journal_entry(self.last_forecast, full_actions, outcome)
         return {
             "state": self.state,
             "forecast": self.last_forecast,
             "outcome": outcome,
             "actions": full_actions,
+            "journal": journal,
             "top_risks": top_risks,
             "top_risk": top_risks[0] if top_risks else None,
             "turn": self.state["telemetry"].get("turn", 1),

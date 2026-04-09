@@ -63,8 +63,8 @@ def compute_risk_ranking(
     fuel_pressure = _resource_pressure(stock(resources, "fuel"), constants.get("fuel_risk_threshold", 12.0))
     materials_pressure = _resource_pressure(stock(resources, "materials"), constants.get("materials_risk_threshold", 8.0))
     workforce_pressure = _resource_pressure(stock(resources, "workforce_capacity"), constants.get("workforce_risk_threshold", 45.0))
-    energy_constraint = 0.15 if any("fuel" in item.lower() or "power generation" in item.lower() for item in constraint_log) else 0.0
-    water_constraint = 0.15 if any("water delivery" in item.lower() or "pump" in item.lower() for item in constraint_log) else 0.0
+    energy_constraint = 0.15 if any("fuel" in item.lower() or "energy" in item.lower() or "operating capacity" in item.lower() for item in constraint_log) else 0.0
+    water_constraint = 0.15 if any("water delivery" in item.lower() or "water" in item.lower() for item in constraint_log) else 0.0
     food_constraint = 0.15 if any("food production" in item.lower() for item in constraint_log) else 0.0
     budget_constraint = 0.10 if economy.get("service_penalty", 0.0) > 0 else 0.0
     unrest_constraint = 0.10 if workforce_pressure > 0.0 else 0.0
@@ -118,7 +118,7 @@ def compute_risk_ranking(
                 + max(0.0, (energy_demand - stock(resources, "energy")) / max(energy_demand, 1.0)) * 0.5
                 - (0.15 if recovery_flags.get("energy_recovery") else 0.0)
             ),
-            "reason": "power risk reflects energy reserves plus fuel and workforce bottlenecks",
+            "reason": "energy risk reflects reserves plus fuel and workforce bottlenecks",
         },
         {
             "issue_id": "budget_erosion",

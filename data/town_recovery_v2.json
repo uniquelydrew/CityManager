@@ -1,8 +1,9 @@
 {
   "scenario_id": "town_recovery_v3_logistics",
   "description": "Player stabilizes a failing town by managing resource flows, supporting logistics, and infrastructure constraints.",
-  "active_case_id": "berlin_airlift_1948",
-  "available_case_ids": ["berlin_airlift_1948", "new_york_fiscal_crisis_1975"],
+  "active_case_id": "camelot_winter_crisis",
+  "available_case_ids": ["berlin_airlift_1948", "new_york_fiscal_crisis_1975", "camelot_winter_crisis", "arcane_city_ley_failure"],
+  "presentation_profile_key": "standard",
   "systems": ["economy", "water", "energy", "food", "population", "fuel", "materials", "workforce_capacity"],
   "resource_type_ids": ["water", "electricity", "food", "fuel", "materials", "labor_hours"],
   "interaction_ids": [
