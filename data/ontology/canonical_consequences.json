@@ -1,0 +1,112 @@
+{
+  "canonical_consequences": [
+    {
+      "key": "service_interruption",
+      "version": 1,
+      "affects_systems": [{"system": "trust", "delta": -0.08}],
+      "affects_actor_groups": [{"actor_group": "households", "severity": 0.7}],
+      "affects_services": [{"service": "water_delivery", "severity": 0.8}],
+      "narrative_class": "delay",
+      "debug_description": "Service access is interrupted or unreliable."
+    },
+    {
+      "key": "health_decline",
+      "version": 1,
+      "affects_systems": [{"system": "health", "delta": -0.1}],
+      "affects_actor_groups": [{"actor_group": "patients", "severity": 0.9}],
+      "affects_services": [{"service": "medical_care", "severity": 0.5}],
+      "narrative_class": "illness",
+      "debug_description": "Population health worsens from shortages or stress."
+    },
+    {
+      "key": "trust_loss",
+      "version": 1,
+      "affects_systems": [{"system": "trust", "delta": -0.08}, {"system": "legitimacy", "delta": -0.05}],
+      "affects_actor_groups": [{"actor_group": "households", "severity": 0.5}],
+      "affects_services": [],
+      "narrative_class": "instability",
+      "debug_description": "Visible failures reduce trust in leadership."
+    },
+    {
+      "key": "distribution_breakdown",
+      "version": 1,
+      "affects_systems": [{"system": "logistics", "delta": -0.1}],
+      "affects_actor_groups": [{"actor_group": "workers", "severity": 0.6}],
+      "affects_services": [{"service": "transport_access", "severity": 0.8}],
+      "narrative_class": "delay",
+      "debug_description": "Relief, repair, or supply distribution stalls."
+    },
+    {
+      "key": "repair_delay",
+      "version": 1,
+      "affects_systems": [{"system": "infrastructure", "delta": -0.08}],
+      "affects_actor_groups": [{"actor_group": "leaders", "severity": 0.4}],
+      "affects_services": [{"service": "emergency_response", "severity": 0.5}],
+      "narrative_class": "damage",
+      "debug_description": "Repair and recovery processes slow down."
+    },
+    {
+      "key": "incident_spike",
+      "version": 1,
+      "affects_systems": [{"system": "order", "delta": -0.1}],
+      "affects_actor_groups": [{"actor_group": "households", "severity": 0.5}, {"actor_group": "workers", "severity": 0.6}],
+      "affects_services": [{"service": "public_order", "severity": 0.8}],
+      "narrative_class": "instability",
+      "debug_description": "Disruption, conflict, or incident pressure rises."
+    },
+    {
+      "key": "shortage_spread",
+      "version": 1,
+      "affects_systems": [{"system": "food", "delta": -0.08}, {"system": "trust", "delta": -0.04}],
+      "affects_actor_groups": [{"actor_group": "households", "severity": 0.6}, {"actor_group": "patients", "severity": 0.5}],
+      "affects_services": [{"service": "food_distribution", "severity": 0.7}],
+      "narrative_class": "shortage",
+      "debug_description": "A shortage expands across more groups or districts."
+    },
+    {
+      "key": "institutional_overload",
+      "version": 1,
+      "affects_systems": [{"system": "logistics", "delta": -0.08}, {"system": "legitimacy", "delta": -0.04}],
+      "affects_actor_groups": [{"actor_group": "leaders", "severity": 0.6}, {"actor_group": "workers", "severity": 0.5}],
+      "affects_services": [{"service": "emergency_response", "severity": 0.7}],
+      "narrative_class": "instability",
+      "debug_description": "Institutions are overloaded by visible crisis demand."
+    },
+    {
+      "key": "capacity_loss",
+      "version": 1,
+      "affects_systems": [{"system": "workforce", "delta": -0.08}, {"system": "infrastructure", "delta": -0.04}],
+      "affects_actor_groups": [{"actor_group": "workers", "severity": 0.7}],
+      "affects_services": [{"service": "production_output", "severity": 0.6}],
+      "narrative_class": "loss",
+      "debug_description": "The system loses productive or institutional capacity."
+    },
+    {
+      "key": "labor_disruption",
+      "version": 1,
+      "affects_systems": [{"system": "workforce", "delta": -0.1}, {"system": "order", "delta": -0.04}],
+      "affects_actor_groups": [{"actor_group": "workers", "severity": 0.8}],
+      "affects_services": [{"service": "workforce_participation", "severity": 0.8}],
+      "narrative_class": "instability",
+      "debug_description": "Labor participation and productive coordination are disrupted."
+    },
+    {
+      "key": "authority_crisis",
+      "version": 1,
+      "affects_systems": [{"system": "legitimacy", "delta": -0.1}, {"system": "trust", "delta": -0.06}],
+      "affects_actor_groups": [{"actor_group": "leaders", "severity": 0.7}, {"actor_group": "households", "severity": 0.5}],
+      "affects_services": [{"service": "policy_compliance", "severity": 0.7}],
+      "narrative_class": "instability",
+      "debug_description": "Authority becomes too weak to coordinate collective action smoothly."
+    },
+    {
+      "key": "policy_delay",
+      "version": 1,
+      "affects_systems": [{"system": "legitimacy", "delta": -0.04}, {"system": "trust", "delta": -0.03}],
+      "affects_actor_groups": [{"actor_group": "leaders", "severity": 0.5}],
+      "affects_services": [{"service": "policy_compliance", "severity": 0.5}],
+      "narrative_class": "delay",
+      "debug_description": "Needed action is delayed or weakened by political blockage."
+    }
+  ]
+}

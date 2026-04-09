@@ -1,0 +1,125 @@
+{
+  "canonical_resources": [
+    {
+      "key": "water",
+      "version": 1,
+      "category": "consumable",
+      "kind": "stock",
+      "default_unit_type": "volume",
+      "contributes_to_systems": ["water"],
+      "substitutes_for": [],
+      "scarcity_behavior": {"can_deplete": true, "can_substitute": false, "decay_rate": 0.08},
+      "debug_description": "Material water stock tracked as a resource."
+    },
+    {
+      "key": "electricity",
+      "version": 1,
+      "category": "custom",
+      "kind": "flow",
+      "default_unit_type": "custom",
+      "contributes_to_systems": ["energy"],
+      "substitutes_for": [],
+      "scarcity_behavior": {"can_deplete": true, "can_substitute": false, "decay_rate": null},
+      "debug_description": "Concrete energy-bearing resource used by the current logistics simulation."
+    },
+    {
+      "key": "food",
+      "version": 1,
+      "category": "consumable",
+      "kind": "stock",
+      "default_unit_type": "count",
+      "contributes_to_systems": ["food"],
+      "substitutes_for": ["grain"],
+      "scarcity_behavior": {"can_deplete": true, "can_substitute": true, "decay_rate": 0.06},
+      "debug_description": "Prepared or generalized food stock."
+    },
+    {
+      "key": "fuel",
+      "version": 1,
+      "category": "consumable",
+      "kind": "stock",
+      "default_unit_type": "custom",
+      "contributes_to_systems": ["energy"],
+      "substitutes_for": ["coal"],
+      "scarcity_behavior": {"can_deplete": true, "can_substitute": true, "decay_rate": null},
+      "debug_description": "Combustible or equivalent power input."
+    },
+    {
+      "key": "materials",
+      "version": 1,
+      "category": "material",
+      "kind": "stock",
+      "default_unit_type": "count",
+      "contributes_to_systems": ["infrastructure", "logistics"],
+      "substitutes_for": [],
+      "scarcity_behavior": {"can_deplete": true, "can_substitute": false, "decay_rate": 0.03},
+      "debug_description": "Repair or construction input."
+    },
+    {
+      "key": "labor_hours",
+      "version": 1,
+      "category": "labor",
+      "kind": "flow",
+      "default_unit_type": "time",
+      "contributes_to_systems": ["workforce"],
+      "substitutes_for": [],
+      "scarcity_behavior": {"can_deplete": false, "can_substitute": false, "decay_rate": null},
+      "debug_description": "Concrete labor resource used by the current model."
+    },
+    {
+      "key": "grain",
+      "version": 1,
+      "category": "consumable",
+      "kind": "stock",
+      "default_unit_type": "weight",
+      "contributes_to_systems": ["food"],
+      "substitutes_for": ["food"],
+      "scarcity_behavior": {"can_deplete": true, "can_substitute": true, "decay_rate": 0.05},
+      "debug_description": "Scenario-specific food subtype."
+    },
+    {
+      "key": "coal",
+      "version": 1,
+      "category": "consumable",
+      "kind": "stock",
+      "default_unit_type": "weight",
+      "contributes_to_systems": ["energy"],
+      "substitutes_for": ["fuel"],
+      "scarcity_behavior": {"can_deplete": true, "can_substitute": true, "decay_rate": null},
+      "debug_description": "Scenario-specific solid fuel subtype."
+    },
+    {
+      "key": "rail_capacity",
+      "version": 1,
+      "category": "informational",
+      "kind": "stock",
+      "default_unit_type": "custom",
+      "contributes_to_systems": ["logistics"],
+      "substitutes_for": [],
+      "scarcity_behavior": {"can_deplete": false, "can_substitute": false, "decay_rate": null},
+      "debug_description": "Named logistics throughput resource for historical scenarios."
+    },
+    {
+      "key": "tax_receipts",
+      "version": 1,
+      "category": "financial",
+      "kind": "flow",
+      "default_unit_type": "currency",
+      "contributes_to_systems": ["treasury"],
+      "substitutes_for": [],
+      "scarcity_behavior": {"can_deplete": false, "can_substitute": false, "decay_rate": null},
+      "debug_description": "Scenario-specific income stream resource."
+    },
+    {
+      "key": "foreign_aid",
+      "version": 1,
+      "category": "financial",
+      "kind": "flow",
+      "default_unit_type": "custom",
+      "contributes_to_systems": ["treasury", "logistics"],
+      "substitutes_for": [],
+      "scarcity_behavior": {"can_deplete": false, "can_substitute": false, "decay_rate": null},
+      "debug_description": "External support resource."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "entries": [
+    {
+      "term": "Credit Pressure",
+      "definition": "Credit pressure means lenders may stop helping unless leaders show stronger fiscal control.",
+      "why_it_matters": "Fiscal credibility shapes which policy choices remain possible.",
+      "related": ["City Budget", "Political support"]
+    },
+    {
+      "term": "Service Cuts",
+      "definition": "Service cuts reduce public spending by shrinking what the city provides.",
+      "why_it_matters": "Cuts can save money, but they also change trust, labor stability, and neighborhood strain.",
+      "related": ["Public trust", "Municipal Workforce"]
+    },
+    {
+      "term": "Bondholders",
+      "definition": "Bondholders are investors who expect the city to repay borrowed money.",
+      "why_it_matters": "Their support affects whether the city can buy time during fiscal crisis.",
+      "related": ["Credit Pressure", "City Legitimacy"]
+    }
+  ],
+  "background_notes": [
+    "This pack binds the canonical systems to fiscal-crisis language around budget pressure, labor bargaining, and visible service cuts."
+  ]
+}

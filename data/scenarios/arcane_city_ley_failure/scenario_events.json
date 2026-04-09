@@ -1,0 +1,10 @@
+{
+  "events_and_reports": [
+    {
+      "report_id": "ley_pressure_report",
+      "title": "Ley Pressure",
+      "body": "Ley channels remain unstable, so ward repairs and reserve choices are carrying more of the city's survival burden.",
+      "trigger": {"type": "always"}
+    }
+  ]
+}

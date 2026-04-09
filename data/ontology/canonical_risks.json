@@ -1,0 +1,92 @@
+{
+  "canonical_risks": [
+    {
+      "key": "energy_instability",
+      "version": 1,
+      "primary_systems": ["energy"],
+      "dependent_services": ["water_delivery", "heating_access", "emergency_response"],
+      "timeline_class": "near_term",
+      "severity_model": "threshold",
+      "consequence_chain": ["service_interruption", "trust_loss"],
+      "mitigation_actions": ["procure_energy", "procure_fuel"],
+      "debug_description": "Energy system may fail to sustain essential services."
+    },
+    {
+      "key": "water_shortage",
+      "version": 1,
+      "primary_systems": ["water"],
+      "dependent_services": ["water_delivery", "medical_care"],
+      "timeline_class": "near_term",
+      "severity_model": "threshold",
+      "consequence_chain": ["health_decline", "trust_loss"],
+      "mitigation_actions": ["procure_water", "repair_distribution"],
+      "debug_description": "Water access may become unreliable."
+    },
+    {
+      "key": "food_collapse",
+      "version": 1,
+      "primary_systems": ["food"],
+      "dependent_services": ["food_distribution", "medical_care"],
+      "timeline_class": "near_term",
+      "severity_model": "threshold",
+      "consequence_chain": ["health_decline", "labor_disruption"],
+      "mitigation_actions": ["procure_food", "protect_water"],
+      "debug_description": "Food reserves may fall below a safe band."
+    },
+    {
+      "key": "budget_erosion",
+      "version": 1,
+      "primary_systems": ["treasury"],
+      "dependent_services": ["emergency_response", "public_order"],
+      "timeline_class": "compounding",
+      "severity_model": "cumulative",
+      "consequence_chain": ["capacity_loss", "trust_loss"],
+      "mitigation_actions": ["spend_carefully", "restore_income"],
+      "debug_description": "Fiscal strain may limit future action."
+    },
+    {
+      "key": "unrest_spike",
+      "version": 1,
+      "primary_systems": ["order", "workforce"],
+      "dependent_services": ["transport_access", "public_order"],
+      "timeline_class": "near_term",
+      "severity_model": "cumulative",
+      "consequence_chain": ["incident_spike", "capacity_loss"],
+      "mitigation_actions": ["protect_services", "bargain"],
+      "debug_description": "Social strain may spill into disruption."
+    },
+    {
+      "key": "institutional_breakdown",
+      "version": 1,
+      "primary_systems": ["logistics", "infrastructure"],
+      "dependent_services": ["transport_access", "emergency_response"],
+      "timeline_class": "compounding",
+      "severity_model": "cumulative",
+      "consequence_chain": ["distribution_breakdown", "repair_delay"],
+      "mitigation_actions": ["repair_distribution", "increase_throughput"],
+      "debug_description": "Institutions may fail to move relief and repairs."
+    },
+    {
+      "key": "political_stalemate",
+      "version": 1,
+      "primary_systems": ["legitimacy", "trust"],
+      "dependent_services": ["public_order", "emergency_response"],
+      "timeline_class": "delayed",
+      "severity_model": "cumulative",
+      "consequence_chain": ["authority_crisis", "policy_delay"],
+      "mitigation_actions": ["negotiate_support", "visible_relief"],
+      "debug_description": "Weak support may block stronger interventions."
+    },
+    {
+      "key": "public_trust_collapse",
+      "version": 1,
+      "primary_systems": ["trust"],
+      "dependent_services": ["public_order", "policy_compliance"],
+      "timeline_class": "compounding",
+      "severity_model": "cumulative",
+      "consequence_chain": ["trust_loss", "incident_spike"],
+      "mitigation_actions": ["visible_relief", "fairness_signal"],
+      "debug_description": "Visible failure may destroy public confidence."
+    }
+  ]
+}

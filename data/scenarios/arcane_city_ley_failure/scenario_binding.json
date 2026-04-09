@@ -1,0 +1,169 @@
+{
+  "scenario_id": "arcane_city_ley_failure",
+  "scenario_version": 1,
+  "setting_profile": {
+    "era": "fantasy",
+    "tone": "high_magic",
+    "fictionality": "fantasy",
+    "localization_key": "en_US"
+  },
+  "systems": {
+    "energy": {
+      "label": "Arcane Power",
+      "short_label": "Power",
+      "description": "Arcane energy available to maintain wards, lifts, lights, and waterworks.",
+      "mechanism_label": "Ley network",
+      "mechanism_description": "Arcane power is drawn from ley channels and regulated through civic wardstones.",
+      "display_unit": {"mode": "named_unit", "unit_label": "sigils", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "bar", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Failing", "warning": "Unstable", "stable": "Stable", "surplus": "Overcharged"},
+      "risk_labels": {"primary": "Ley instability", "shortage": "Arcane depletion", "disruption": "Ward failure risk"},
+      "glossary": {"quick_explain": "Arcane power is the civic energy that keeps the city's magical systems alive.", "why_it_matters": "If ley flow drops, multiple magical services begin to fail together.", "examples": ["Defensive wards", "Enchanted waterworks", "Lift towers"]},
+      "tutorial": {"player_hint": "Arcane power is this scenario's version of a core operating capacity.", "common_misreadings": ["Not all magic in the setting draws from the civic ley network."]},
+      "aliases": ["ley flow", "civic mana"]
+    },
+    "water": {
+      "label": "Enchanted Waterworks",
+      "short_label": "Waterworks",
+      "description": "Usable water available through the city's magical channels and reservoirs.",
+      "mechanism_label": "Enchanted pumps and channels",
+      "mechanism_description": "Waterworks depend on arcane power, repairs, and stable ward control.",
+      "display_unit": {"mode": "named_unit", "unit_label": "basins", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "bar", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Drying", "warning": "Low", "stable": "Stable", "surplus": null},
+      "risk_labels": {"primary": "Waterworks risk", "shortage": "Water shortage", "disruption": "Canal instability"},
+      "glossary": {"quick_explain": "The waterworks are the magical systems that keep usable water moving through the city.", "why_it_matters": "If the waterworks fail, health and trust drop quickly.", "examples": ["Canal wards", "Reservoir gates"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": ["water access"]
+    },
+    "food": {
+      "label": "Food Stores",
+      "short_label": "Food",
+      "description": "Arcology food reserves and distribution support.",
+      "mechanism_label": "Storehouses and lift delivery",
+      "mechanism_description": "Food security depends on powered lifts, labor, and protected storage.",
+      "display_unit": {"mode": "named_unit", "unit_label": "meals", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "bar", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Critical", "warning": "Low", "stable": "Safe", "surplus": null},
+      "risk_labels": {"primary": "Food store risk", "shortage": "Food shortage", "disruption": "Lift delivery disruption"},
+      "glossary": {"quick_explain": "Food stores include both reserves and the systems that move them through the city.", "why_it_matters": "Food weakness quickly harms health and civic stability.", "examples": ["Granaries", "Lift deliveries"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    },
+    "health": {
+      "label": "Health", "short_label": "Health", "description": "Overall population health and resilience.",
+      "mechanism_label": null, "mechanism_description": null,
+      "display_unit": {"mode": "normalized", "unit_label": null, "precision": 0, "suffix": "%"},
+      "display_style": {"preferred_visual": "bar", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Critical", "warning": "Weak", "stable": "Safe", "surplus": null},
+      "risk_labels": {"primary": null, "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Health shows how well residents can endure strain and disruption.", "why_it_matters": "Low health weakens labor and raises visible crisis pressure.", "examples": ["Ward sickness", "Fatigue"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    },
+    "workforce": {
+      "label": "Civic Crews",
+      "short_label": "Crews",
+      "description": "Available labor for maintenance, ward repair, and logistics.",
+      "mechanism_label": "Guild crews and apprentices",
+      "mechanism_description": "Crews depend on health, morale, and whether the city's institutions can still coordinate them.",
+      "display_unit": {"mode": "named_unit", "unit_label": "labor-hours", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "number", "color_semantics": "default", "show_trend": true, "show_state_word": false},
+      "state_words": {"critical": "Spent", "warning": "Tight", "stable": "Ready", "surplus": null},
+      "risk_labels": {"primary": "Crew strain", "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Civic crews are the labor needed to keep the city functioning.", "why_it_matters": "Low crew capacity slows every repair and recovery effort.", "examples": ["Wardsmiths", "Lift crews"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    },
+    "treasury": {
+      "label": "Civic Reserves", "short_label": "Reserves", "description": "Available funds and stores for emergency action.",
+      "mechanism_label": null, "mechanism_description": null,
+      "display_unit": {"mode": "named_unit", "unit_label": "crowns", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "number", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Thin", "warning": "Strained", "stable": "Healthy", "surplus": "Strong"},
+      "risk_labels": {"primary": "Reserve strain", "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Civic reserves are the money and stored value the city can still spend on crisis response.", "why_it_matters": "Low reserves narrow future options.", "examples": ["Emergency imports", "Ward repair"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    },
+    "trust": {
+      "label": "Public Confidence", "short_label": "Confidence", "description": "Whether residents still believe the ward council can keep the city safe.",
+      "mechanism_label": null, "mechanism_description": null,
+      "display_unit": {"mode": "normalized", "unit_label": null, "precision": 2, "suffix": null},
+      "display_style": {"preferred_visual": "badge", "color_semantics": "default", "show_trend": true, "show_state_word": false},
+      "state_words": {"critical": "Breaking", "warning": "Slipping", "stable": "Holding", "surplus": null},
+      "risk_labels": {"primary": "Confidence risk", "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Public confidence measures whether residents still believe the city's magical institutions are protecting them.", "why_it_matters": "Low confidence makes every visible failure more dangerous.", "examples": ["Ward trust", "Council confidence"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    },
+    "legitimacy": {
+      "label": "Council Mandate", "short_label": "Mandate", "description": "The accepted right of the ward council to direct emergency action.",
+      "mechanism_label": null, "mechanism_description": null,
+      "display_unit": {"mode": "normalized", "unit_label": null, "precision": 2, "suffix": null},
+      "display_style": {"preferred_visual": "badge", "color_semantics": "default", "show_trend": true, "show_state_word": false},
+      "state_words": {"critical": "Questioned", "warning": "Fragile", "stable": "Accepted", "surplus": null},
+      "risk_labels": {"primary": "Mandate risk", "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Council mandate is the city's belief that its leadership still has the right to act decisively.", "why_it_matters": "Low mandate makes stronger measures harder to sustain.", "examples": ["Ward council", "Civic authority"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    },
+    "logistics": {
+      "label": "Lift and Canal Throughput", "short_label": "Throughput", "description": "How much supply, labor, and repair activity the arcology can still move through its systems.",
+      "mechanism_label": "Lift towers and canal routes", "mechanism_description": "Throughput depends on ward stability, crews, and working magical infrastructure.",
+      "display_unit": {"mode": "normalized", "unit_label": null, "precision": 2, "suffix": null},
+      "display_style": {"preferred_visual": "gauge", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Broken", "warning": "Strained", "stable": "Working", "surplus": null},
+      "risk_labels": {"primary": "Throughput risk", "shortage": null, "disruption": "Lift disruption"},
+      "glossary": {"quick_explain": "Lift and canal throughput shows whether the arcology can still move what it needs.", "why_it_matters": "Weak throughput slows every fix and every delivery.", "examples": ["Lift towers", "Canal gates"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    }
+  },
+  "services": {
+    "water_delivery": {"label": "Enchanted Waterworks", "description": "Reliable water service through magical civic systems.", "failure_text": "Waterworks may become unreliable.", "glossary": {"quick_explain": "The waterworks are the function residents depend on, not just the water stock.", "why_it_matters": "Waterworks failure quickly harms health and trust."}},
+    "heating_access": {"label": "Ward Heat", "description": "Reliable warmth through civic wards and powered districts.", "failure_text": "Ward heat may become unreliable.", "glossary": {"quick_explain": "Ward heat tracks whether the city's magical heating systems still function.", "why_it_matters": "Loss of heat quickly turns a systems problem into a visible crisis."}},
+    "food_distribution": {"label": "Storehouse Delivery", "description": "Movement of food through storehouses, lifts, and district routes.", "failure_text": "Storehouse delivery may become unreliable.", "glossary": {"quick_explain": "Storehouse delivery matters because reserves still have to reach people.", "why_it_matters": "Distribution weakness creates shortages even where stock remains."}},
+    "transport_access": {"label": "Lift Access", "description": "Movement through lifts, canals, and district corridors.", "failure_text": "Lift access may bottleneck relief and repair work.", "glossary": {"quick_explain": "Lift access tracks whether the city can still move what it needs.", "why_it_matters": "Weak lift access makes every repair slower."}},
+    "medical_care": {"label": "Healing Care", "description": "Capacity to care for the injured and sick.", "failure_text": "Healing care may become less reliable.", "glossary": {"quick_explain": "Healing care reflects whether the city's vulnerable groups are still protected.", "why_it_matters": "Visible healing failures damage public confidence."}},
+    "emergency_response": {"label": "Ward Response", "description": "How quickly the city can react to new danger.", "failure_text": "Ward response may slow down.", "glossary": {"quick_explain": "Ward response combines power, crews, reserves, and mandate.", "why_it_matters": "Slow response makes magical failure feel much more dangerous."}},
+    "public_order": {"label": "City Stability", "description": "Visible civic stability across the arcology.", "failure_text": "Instability and panic may spread.", "glossary": {"quick_explain": "City stability tracks whether fear is spilling into visible disruption.", "why_it_matters": "Instability makes every other system harder to protect."}}
+  },
+  "resources": {
+    "water": {"label": "Reservoir Water", "description": "Emergency water support.", "display_unit": {"mode": "named_unit", "unit_label": "basins", "precision": 0}, "aliases": []},
+    "electricity": {"label": "Arcane Power", "description": "Emergency ley support.", "display_unit": {"mode": "named_unit", "unit_label": "sigils", "precision": 0}, "aliases": ["energy"]},
+    "food": {"label": "Storehouse Food", "description": "Emergency food support.", "display_unit": {"mode": "named_unit", "unit_label": "meals", "precision": 0}, "aliases": []},
+    "fuel": {"label": "Spell Components", "description": "Material inputs used to stabilize the ley network.", "display_unit": {"mode": "named_unit", "unit_label": "kits", "precision": 0}, "aliases": []},
+    "materials": {"label": "Ward Materials", "description": "Repair materials for canals, wards, and lifts.", "display_unit": {"mode": "named_unit", "unit_label": "crates", "precision": 0}, "aliases": []},
+    "labor_hours": {"label": "Guild Crew Hours", "description": "Skilled labor for maintenance and repair.", "display_unit": {"mode": "named_unit", "unit_label": "labor-hours", "precision": 0}, "aliases": ["workforce_capacity"]}
+  },
+  "risks": {
+    "energy_instability": {"label": "Ley power may fail soon", "summary": "Arcane power is at risk of dropping below what the city needs.", "if_ignored": "If ley power fails, wards, waterworks, and lift towers may weaken together.", "mitigation_hint": "Import arcane power or spell components first."},
+    "water_shortage": {"label": "The waterworks may break down", "summary": "Enchanted water delivery is under strain.", "if_ignored": "If the waterworks weaken further, health and trust may fall next.", "mitigation_hint": "Protect arcane power, crews, and repair materials."},
+    "food_collapse": {"label": "Food stores are running low", "summary": "Storehouse reserves and lift delivery are under strain.", "if_ignored": "If food keeps falling, health and stability may worsen.", "mitigation_hint": "Protect distribution and powered transport."},
+    "budget_erosion": {"label": "Civic reserves are under pressure", "summary": "Emergency spending is shrinking the city's remaining room to act.", "if_ignored": "If reserves keep falling, future response choices will narrow.", "mitigation_hint": "Use targeted relief and avoid waste."},
+    "unrest_spike": {"label": "Crew strain is rising", "summary": "Fatigue and visible instability are putting pressure on city crews.", "if_ignored": "If strain rises further, repairs and services may slow together.", "mitigation_hint": "Protect visible services and keep crews supplied."},
+    "institutional_breakdown": {"label": "The ward system may jam up", "summary": "Canals, lifts, and civic wards are under structural stress.", "if_ignored": "If institutions stall, supplies and repairs may stop reaching districts.", "mitigation_hint": "Support throughput and repair capacity."},
+    "political_stalemate": {"label": "Support for strong action is weakening", "summary": "The ward council's political support is becoming harder to hold together.", "if_ignored": "If support falls further, stronger measures may become unavailable.", "mitigation_hint": "Choose visible relief the council can still defend."},
+    "public_trust_collapse": {"label": "Public confidence is slipping", "summary": "Residents are losing confidence in the city's magical institutions.", "if_ignored": "If confidence falls, backlash and instability may spread faster.", "mitigation_hint": "Protect the services residents feel most directly."}
+  },
+  "actor_groups": {
+    "canal_households": {"label": "Canal District Households", "description": "Residents relying on working wards, water, and food delivery."},
+    "wardsmith_crews": {"label": "Wardsmith Crews", "description": "Skilled workers keeping the city's magical systems functioning."},
+    "infirmary_patients": {"label": "Infirmary Patients", "description": "Vulnerable people needing reliable heat, water, and healing care."}
+  },
+  "ui_text": {
+    "panels": {
+      "current_problem_label": "Immediate Crisis",
+      "what_changed_label": "What Changed Since Last Turn",
+      "what_happens_next_label": "What Happens Next",
+      "if_you_do_nothing_label": "If You Do Nothing",
+      "who_is_affected_label": "Who Is Affected",
+      "why_this_is_happening_label": "Why This Is Happening",
+      "system_pressures_label": "Political and System Pressures",
+      "review_label": "Journal"
+    },
+    "actions": {"choose_label": "Choose Your Response", "confirm_label": "Run Turn", "inspect_label": "Look Up Terms"},
+    "overlays": {"glossary_tab": "Glossary", "background_tab": "Background", "systems_tab": "Systems", "skills_tab": "GED Skills", "advanced_tab": "Advanced"}
+  }
+}

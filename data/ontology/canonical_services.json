@@ -1,0 +1,112 @@
+{
+  "canonical_services": [
+    {
+      "key": "water_delivery",
+      "version": 1,
+      "description": "Reliable access to usable water for households and essential functions.",
+      "driven_by_systems": ["water", "energy", "infrastructure", "workforce"],
+      "affected_actor_groups": ["households", "patients", "workers"],
+      "failure_consequences": ["service_interruption", "health_decline"],
+      "presentation_priority": 1
+    },
+    {
+      "key": "heating_access",
+      "version": 1,
+      "description": "Reliable access to warmth or equivalent survival-supporting heat.",
+      "driven_by_systems": ["energy", "logistics"],
+      "affected_actor_groups": ["households", "patients"],
+      "failure_consequences": ["service_interruption", "trust_loss"],
+      "presentation_priority": 2
+    },
+    {
+      "key": "food_distribution",
+      "version": 1,
+      "description": "Movement of food from stores or production into households and institutions.",
+      "driven_by_systems": ["food", "logistics", "workforce"],
+      "affected_actor_groups": ["households", "workers", "patients"],
+      "failure_consequences": ["shortage_spread", "health_decline"],
+      "presentation_priority": 1
+    },
+    {
+      "key": "transport_access",
+      "version": 1,
+      "description": "Movement of goods, workers, and relief through the scenario's transport network.",
+      "driven_by_systems": ["logistics", "infrastructure", "order"],
+      "affected_actor_groups": ["workers", "nobles", "households"],
+      "failure_consequences": ["distribution_breakdown", "repair_delay"],
+      "presentation_priority": 2
+    },
+    {
+      "key": "medical_care",
+      "version": 1,
+      "description": "Capacity to treat the sick and protect vulnerable groups.",
+      "driven_by_systems": ["health", "water", "food", "energy"],
+      "affected_actor_groups": ["patients", "households"],
+      "failure_consequences": ["health_decline", "trust_loss"],
+      "presentation_priority": 2
+    },
+    {
+      "key": "emergency_response",
+      "version": 1,
+      "description": "Ability of institutions to respond quickly to crisis conditions.",
+      "driven_by_systems": ["energy", "treasury", "logistics", "legitimacy"],
+      "affected_actor_groups": ["households", "workers", "patients", "leaders"],
+      "failure_consequences": ["institutional_overload", "trust_loss"],
+      "presentation_priority": 3
+    },
+    {
+      "key": "public_order",
+      "version": 1,
+      "description": "Visible civic stability and predictable enforcement or cooperation.",
+      "driven_by_systems": ["order", "trust", "legitimacy"],
+      "affected_actor_groups": ["households", "workers", "leaders"],
+      "failure_consequences": ["incident_spike", "institutional_overload"],
+      "presentation_priority": 3
+    },
+    {
+      "key": "sanitation_access",
+      "version": 1,
+      "description": "Reliable sanitation and waste-handling support.",
+      "driven_by_systems": ["sanitation", "water", "infrastructure"],
+      "affected_actor_groups": ["households", "patients", "workers"],
+      "failure_consequences": ["health_decline", "trust_loss"],
+      "presentation_priority": 2
+    },
+    {
+      "key": "workforce_participation",
+      "version": 1,
+      "description": "Usable participation of the population in work and civic upkeep.",
+      "driven_by_systems": ["workforce", "health", "trust"],
+      "affected_actor_groups": ["workers", "leaders"],
+      "failure_consequences": ["capacity_loss", "trust_loss"],
+      "presentation_priority": 3
+    },
+    {
+      "key": "production_output",
+      "version": 1,
+      "description": "Ability of the scenario's economy or institutions to produce needed goods and services.",
+      "driven_by_systems": ["workforce", "energy", "logistics"],
+      "affected_actor_groups": ["workers", "households", "leaders"],
+      "failure_consequences": ["capacity_loss", "distribution_breakdown"],
+      "presentation_priority": 3
+    },
+    {
+      "key": "repair_capacity",
+      "version": 1,
+      "description": "Ability to repair damaged or weakened systems.",
+      "driven_by_systems": ["workforce", "infrastructure", "logistics"],
+      "affected_actor_groups": ["workers", "leaders", "households"],
+      "failure_consequences": ["repair_delay", "service_interruption"],
+      "presentation_priority": 3
+    },
+    {
+      "key": "policy_compliance",
+      "version": 1,
+      "description": "Willingness and ability of people and institutions to follow emergency measures.",
+      "driven_by_systems": ["trust", "legitimacy", "order"],
+      "affected_actor_groups": ["households", "workers", "leaders"],
+      "failure_consequences": ["trust_loss", "incident_spike"],
+      "presentation_priority": 3
+    }
+  ]
+}

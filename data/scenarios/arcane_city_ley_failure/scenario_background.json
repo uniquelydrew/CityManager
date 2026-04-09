@@ -1,0 +1,46 @@
+{
+  "case_metadata": {
+    "title": "Arcane Ley Failure",
+    "place": "Highspire Arcology",
+    "timeframe": "Fifth Age",
+    "summary": "Ley flow is failing across the arcology. The ward council must keep waterworks, lift towers, and district heat functioning while preserving confidence in civic magic.",
+    "player_role": "You are coordinating the ward council's emergency response.",
+    "goal_text": "Goal: keep Highspire stable long enough to prevent cascading magical failure.",
+    "reference_notes": [
+      "This is a parity/reference fantasy scenario for ontology binding tests.",
+      "It proves that the same canonical systems can render through magical mechanism language without engine changes."
+    ]
+  },
+  "world_state": {},
+  "actors": [
+    {"actor_id": "ward_council", "display_name": "Ward Council", "kind": "civic_government", "agenda": "Prevent citywide magical collapse while preserving confidence in council rule."},
+    {"actor_id": "wardsmith_guild", "display_name": "Wardsmith Guild", "kind": "profession", "agenda": "Protect the ley network without exhausting crews and reserves."}
+  ],
+  "institutions": [
+    {"institution_id": "ward_towers", "display_name": "Ward Towers", "status_indicator": "transport_throughput"},
+    {"institution_id": "canal_works", "display_name": "Canal Works", "status_indicator": "distribution_capacity"}
+  ],
+  "groups": [
+    {"group_id": "canal_households", "display_name": "Canal District Households", "main_pressure": "ward heat and water reliability"},
+    {"group_id": "wardsmith_crews", "display_name": "Wardsmith Crews", "main_pressure": "repair fatigue and unstable ley channels"},
+    {"group_id": "infirmary_patients", "display_name": "Infirmary Patients", "main_pressure": "healing, heat, and water reliability"}
+  ],
+  "resources": [
+    {"resource_type_id": "water", "display_name": "Reservoir Water"},
+    {"resource_type_id": "electricity", "display_name": "Arcane Power"},
+    {"resource_type_id": "food", "display_name": "Storehouse Food"},
+    {"resource_type_id": "fuel", "display_name": "Spell Components"},
+    {"resource_type_id": "materials", "display_name": "Ward Materials"},
+    {"resource_type_id": "labor_hours", "display_name": "Guild Crew Hours"}
+  ],
+  "indicators": [],
+  "policy_domains": ["ward_stabilization", "district_relief", "council_bargaining"],
+  "teaching_signals": {
+    "main_skills": ["systems reasoning", "stakeholder reading", "tradeoff analysis"],
+    "guidance": "This scenario asks you to translate a fantasy setting into the same systems reasoning you would use in a historical or modern crisis."
+  },
+  "historical_notes": {
+    "mode": "parity_reference_scenario",
+    "provenance": "Created to test canonical ontology portability across settings."
+  }
+}

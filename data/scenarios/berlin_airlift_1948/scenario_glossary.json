@@ -1,0 +1,25 @@
+{
+  "entries": [
+    {
+      "term": "Blockade",
+      "definition": "A blockade cuts or limits the normal movement of goods and people into an area.",
+      "why_it_matters": "West Berlin starts with ground routes restricted, so airlift and rationing decisions carry more weight.",
+      "related": ["Airlift", "Rationing"]
+    },
+    {
+      "term": "Airlift",
+      "definition": "An airlift moves supplies by aircraft when land or sea routes are not reliable enough.",
+      "why_it_matters": "The airlift is the main way relief reaches the city in this scenario.",
+      "related": ["Blockade", "Transport throughput"]
+    },
+    {
+      "term": "Rationing",
+      "definition": "Rationing limits access so a scarce supply can stretch farther.",
+      "why_it_matters": "Rationing can protect essential systems but may also wear down trust and support.",
+      "related": ["Food", "Public trust"]
+    }
+  ],
+  "background_notes": [
+    "This pack binds canonical systems to the Berlin Airlift's electricity, transport, and rationing language."
+  ]
+}

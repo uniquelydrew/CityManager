@@ -1,0 +1,25 @@
+{
+  "entries": [
+    {
+      "term": "Round Table",
+      "definition": "The Round Table represents Camelot's elite leadership circle and its competing obligations.",
+      "why_it_matters": "Court unity matters because policies can fail politically even when they look practical.",
+      "related": ["Royal Authority", "Common Trust"]
+    },
+    {
+      "term": "Granary Relief",
+      "definition": "Granary relief means opening stored food to protect households during scarcity.",
+      "why_it_matters": "It can calm hunger quickly, but it may anger elites who fear reserve loss.",
+      "related": ["Food Stores", "Crown Reserves"]
+    },
+    {
+      "term": "Guild Labor",
+      "definition": "Guild labor is skilled work available for hauling, repair, and production support.",
+      "why_it_matters": "If labor weakens, roads, mills, and relief all become less reliable.",
+      "related": ["Available Labor", "Road Access"]
+    }
+  ],
+  "background_notes": [
+    "This pack binds canonical systems to Camelot's court, granary, and winter-road language without changing the simulation ontology."
+  ]
+}

@@ -1,0 +1,174 @@
+{
+  "scenario_id": "camelot_winter_crisis",
+  "scenario_version": 1,
+  "setting_profile": {
+    "era": "medieval",
+    "tone": "mythic_civic",
+    "fictionality": "fantasy",
+    "localization_key": "en_GB"
+  },
+  "systems": {
+    "energy": {
+      "label": "Power",
+      "short_label": "Power",
+      "description": "The force needed to keep hearths, mills, workshops, and vital town functions operating.",
+      "mechanism_label": "Hearths, mills, and labor",
+      "mechanism_description": "Power in Camelot comes from fuel, animal work, mill force, and human labor.",
+      "display_unit": {"mode": "normalized", "unit_label": null, "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "bar", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Critical", "warning": "Strained", "stable": "Safe", "surplus": "Strong"},
+      "risk_labels": {"primary": "Power generation risk", "shortage": "Power shortage", "disruption": "Work capacity disruption"},
+      "glossary": {
+        "quick_explain": "Power represents the force needed to keep work, heating, and essential town functions going.",
+        "why_it_matters": "If power fails, mills slow, repairs stall, and water access may worsen.",
+        "examples": ["Mill output", "Cart hauling", "Hearth fuel"]
+      },
+      "tutorial": {
+        "player_hint": "Read what power means in this scenario before acting.",
+        "common_misreadings": ["Power here does not mean electricity."]
+      },
+      "aliases": ["work capacity", "mill force"]
+    },
+    "water": {
+      "label": "Water Access",
+      "short_label": "Water",
+      "description": "Reliable access to well water, river hauling, and stored water supplies.",
+      "mechanism_label": "Wells, hauling, and local storage",
+      "mechanism_description": "Water access depends on labor, transport, and the upkeep of local infrastructure.",
+      "display_unit": {"mode": "named_unit", "unit_label": "wu", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "bar", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Critical", "warning": "Low", "stable": "Safe", "surplus": null},
+      "risk_labels": {"primary": "Water access risk", "shortage": "Water shortage", "disruption": "Well and hauling disruption"},
+      "glossary": {"quick_explain": "Water access tracks whether homes and institutions can still get enough usable water.", "why_it_matters": "Water problems quickly harm health and confidence in the crown.", "examples": ["Wells", "River hauling"]},
+      "tutorial": {"player_hint": "Water often weakens after power and transport strain.", "common_misreadings": []},
+      "aliases": ["well access"]
+    },
+    "food": {
+      "label": "Food Stores",
+      "short_label": "Food",
+      "description": "Grain, salted stores, and delivered food available to town and countryside.",
+      "mechanism_label": "Granaries and winter stores",
+      "mechanism_description": "Food security depends on harvest stores, hauling, and enough labor and water to keep supply moving.",
+      "display_unit": {"mode": "named_unit", "unit_label": "meals", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "bar", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Critical", "warning": "Low", "stable": "Safe", "surplus": null},
+      "risk_labels": {"primary": "Food supply risk", "shortage": "Storehouse strain", "disruption": "Ration disruption"},
+      "glossary": {"quick_explain": "Food stores measure whether the court can keep people supplied through the winter.", "why_it_matters": "Food strain weakens health, labor, and trust between town and countryside.", "examples": ["Granary stores", "Salted food", "Winter rations"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": ["stores", "rations"]
+    },
+    "health": {
+      "label": "Health", "short_label": "Health", "description": "Overall population health and resilience.",
+      "mechanism_label": null, "mechanism_description": null,
+      "display_unit": {"mode": "normalized", "unit_label": null, "precision": 0, "suffix": "%"},
+      "display_style": {"preferred_visual": "bar", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Critical", "warning": "Weak", "stable": "Safe", "surplus": null},
+      "risk_labels": {"primary": null, "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Health shows how well people can survive the winter strain.", "why_it_matters": "Poor health shrinks labor capacity and raises visible hardship.", "examples": ["Cold exposure", "Illness burden"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    },
+    "workforce": {
+      "label": "Available Labor", "short_label": "Labor", "description": "Peasant, guild, and household labor available for the crown to direct.",
+      "mechanism_label": "Guild and peasant labor", "mechanism_description": "Labor depends on health, trust, and how much strain people will bear.",
+      "display_unit": {"mode": "named_unit", "unit_label": "labor-hours", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "number", "color_semantics": "default", "show_trend": true, "show_state_word": false},
+      "state_words": {"critical": "Spent", "warning": "Tight", "stable": "Ready", "surplus": null},
+      "risk_labels": {"primary": "Labor strain", "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Available labor shows how much useful work the realm can still direct this turn.", "why_it_matters": "Low labor slows hauling, repairs, and relief work.", "examples": ["Guild labor", "Peasant hauling", "Stablehands"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": ["guild labor"]
+    },
+    "treasury": {
+      "label": "Crown Reserves", "short_label": "Reserves", "description": "The crown's remaining room to fund relief and bargaining.",
+      "mechanism_label": null, "mechanism_description": null,
+      "display_unit": {"mode": "named_unit", "unit_label": "silver", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "number", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Thin", "warning": "Strained", "stable": "Healthy", "surplus": "Strong"},
+      "risk_labels": {"primary": "Reserve strain", "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Crown reserves are the money and stored value the court can still spend on relief.", "why_it_matters": "Weak reserves make every future response smaller and more political.", "examples": ["Grain purchases", "Road escorts"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": ["treasury"]
+    },
+    "trust": {
+      "label": "Common Trust", "short_label": "Trust", "description": "How much ordinary people believe the court is acting fairly and effectively.",
+      "mechanism_label": null, "mechanism_description": null,
+      "display_unit": {"mode": "normalized", "unit_label": null, "precision": 2, "suffix": null},
+      "display_style": {"preferred_visual": "badge", "color_semantics": "default", "show_trend": true, "show_state_word": false},
+      "state_words": {"critical": "Breaking", "warning": "Slipping", "stable": "Holding", "surplus": null},
+      "risk_labels": {"primary": "Trust risk", "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Common trust shows whether households still believe the crown is keeping faith with them.", "why_it_matters": "Low trust makes every sacrifice and shortage feel more dangerous.", "examples": ["Peasant trust", "Town confidence"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    },
+    "legitimacy": {
+      "label": "Royal Authority", "short_label": "Authority", "description": "The accepted right of the crown to direct the realm under strain.",
+      "mechanism_label": null, "mechanism_description": null,
+      "display_unit": {"mode": "normalized", "unit_label": null, "precision": 2, "suffix": null},
+      "display_style": {"preferred_visual": "badge", "color_semantics": "default", "show_trend": true, "show_state_word": false},
+      "state_words": {"critical": "Questioned", "warning": "Fragile", "stable": "Accepted", "surplus": null},
+      "risk_labels": {"primary": "Authority risk", "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Royal authority is the realm's belief that the crown can fairly command obedience.", "why_it_matters": "Low authority makes strong action politically costly.", "examples": ["Crown command", "Court mandate"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    },
+    "logistics": {
+      "label": "Road and Wagon Capacity", "short_label": "Transport", "description": "How much relief, fuel, and repair work the realm can move in time to matter.",
+      "mechanism_label": "Roads, wagons, and escorts", "mechanism_description": "Transport depends on passable roads, available animals, and enough secure labor and escorts.",
+      "display_unit": {"mode": "normalized", "unit_label": null, "precision": 2, "suffix": null},
+      "display_style": {"preferred_visual": "gauge", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Broken", "warning": "Strained", "stable": "Working", "surplus": null},
+      "risk_labels": {"primary": "Transport risk", "shortage": null, "disruption": "Road disruption"},
+      "glossary": {"quick_explain": "Road and wagon capacity measures whether the realm can still move relief and repairs.", "why_it_matters": "Weak transport turns every shortage into a broader crisis.", "examples": ["Roads", "Wagons", "Escort routes"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": ["wagon capacity"]
+    }
+  },
+  "services": {
+    "water_delivery": {"label": "Water Access", "description": "Reliable access to wells, hauling, and stored water.", "failure_text": "Wells, hauling, and local distribution may become unreliable.", "glossary": {"quick_explain": "Water access is the function people depend on, not just stored water.", "why_it_matters": "Losing water access quickly harms health and confidence in the crown."}},
+    "heating_access": {"label": "Warmth and Hearth Access", "description": "Reliable access to heat, hearths, and other winter survival support.", "failure_text": "Homes and institutions may lose dependable warmth.", "glossary": {"quick_explain": "Warmth access shows whether the realm can keep people heated through the winter.", "why_it_matters": "Cold exposure quickly worsens hardship and trust."}},
+    "food_distribution": {"label": "Food Distribution", "description": "Movement of grain and stores into homes and institutions.", "failure_text": "Storehouses and deliveries may fail to reach people reliably.", "glossary": {"quick_explain": "Food distribution matters because supplies must still reach people.", "why_it_matters": "Distribution weakness can create shortages even when stores exist."}},
+    "transport_access": {"label": "Road Access", "description": "Movement across roads, tracks, and escort routes.", "failure_text": "Road access may bottleneck relief and repairs.", "glossary": {"quick_explain": "Road access tracks whether the realm can still move what it needs.", "why_it_matters": "Weak road access delays every other fix."}},
+    "medical_care": {"label": "Abbey Care", "description": "Capacity to care for the sick and vulnerable.", "failure_text": "Care for the vulnerable may become unreliable.", "glossary": {"quick_explain": "Abbey care stands in for formal medical support in Camelot.", "why_it_matters": "Visible failures here quickly damage trust."}},
+    "emergency_response": {"label": "Crown Response", "description": "How effectively the crown can react to sudden strain.", "failure_text": "The crown's emergency response may slow down.", "glossary": {"quick_explain": "Crown response combines resources, transport, and authority.", "why_it_matters": "Slow response magnifies hardship and resentment."}},
+    "public_order": {"label": "Realm Stability", "description": "Visible stability across town, countryside, and elite relations.", "failure_text": "Instability and resentment may spread.", "glossary": {"quick_explain": "Realm stability tracks whether daily life and obedience remain workable.", "why_it_matters": "Visible instability makes every shortage harder to manage."}}
+  },
+  "resources": {
+    "water": {"label": "Well and River Water", "description": "Emergency water for homes and relief work.", "display_unit": {"mode": "named_unit", "unit_label": "wu", "precision": 0}, "aliases": []},
+    "electricity": {"label": "Hearth and Mill Power", "description": "Emergency support for vital work capacity.", "display_unit": {"mode": "normalized", "unit_label": null, "precision": 0}, "aliases": ["energy"]},
+    "food": {"label": "Grain and Salted Stores", "description": "Emergency food and ration support.", "display_unit": {"mode": "named_unit", "unit_label": "meals", "precision": 0}, "aliases": []},
+    "fuel": {"label": "Firewood and Charcoal", "description": "Fuel for warmth and power.", "display_unit": {"mode": "named_unit", "unit_label": "loads", "precision": 0}, "aliases": []},
+    "materials": {"label": "Timber and Stone", "description": "Repair materials for roads, mills, and infrastructure.", "display_unit": {"mode": "named_unit", "unit_label": "crates", "precision": 0}, "aliases": []},
+    "labor_hours": {"label": "Guild and Peasant Labor", "description": "Useful labor available for hauling, repair, and relief.", "display_unit": {"mode": "named_unit", "unit_label": "labor-hours", "precision": 0}, "aliases": ["workforce_capacity"]}
+  },
+  "risks": {
+    "energy_instability": {"label": "Power may fail soon", "summary": "Camelot's available work and heating power is at risk of falling too low.", "if_ignored": "If power fails, mills, hauling, and water access may weaken together.", "mitigation_hint": "Buy power or fuel and protect labor."},
+    "water_shortage": {"label": "Water access may break down", "summary": "Wells, hauling, and stored water are under strain.", "if_ignored": "If water weakens further, health and food stability may fall next.", "mitigation_hint": "Protect power, labor, and repair materials."},
+    "food_collapse": {"label": "Food stores are running low", "summary": "Winter stores and distribution are under strain.", "if_ignored": "If food keeps falling, health and trust between town and countryside may worsen.", "mitigation_hint": "Buy food and keep water and transport working."},
+    "budget_erosion": {"label": "Crown reserves are under pressure", "summary": "The crown's ability to keep funding relief is shrinking.", "if_ignored": "If reserves keep falling, future emergency options will narrow.", "mitigation_hint": "Use targeted purchases and avoid unnecessary strain."},
+    "unrest_spike": {"label": "Labor strain is rising", "summary": "Winter hardship is increasing social and labor strain.", "if_ignored": "If strain rises further, labor and service problems may spread.", "mitigation_hint": "Protect visible relief and avoid preventable hardship."},
+    "institutional_breakdown": {"label": "Court systems may jam up", "summary": "Roads, escorts, granaries, and relief institutions are under stress.", "if_ignored": "If institutions stall, supplies may not reach people in time.", "mitigation_hint": "Support transport, repairs, and visible coordination."},
+    "political_stalemate": {"label": "Support for strong action is weakening", "summary": "Court unity and elite cooperation are becoming harder to hold.", "if_ignored": "If support falls further, stronger policies may become unavailable.", "mitigation_hint": "Choose relief that key groups can still defend."},
+    "public_trust_collapse": {"label": "Trust in the court is slipping", "summary": "Households and local groups are losing confidence in the crown.", "if_ignored": "If trust falls, backlash and instability may spread faster.", "mitigation_hint": "Protect the services people see and feel most directly."}
+  },
+  "actor_groups": {
+    "town_households": {"label": "Town Households", "description": "Families facing cold homes, thin rations, and unreliable wells."},
+    "village_farmers": {"label": "Village Farmers", "description": "Rural households managing winter strain and court demands."},
+    "castle_guard": {"label": "Castle Guard and Stablehands", "description": "Workers carrying long watches, hauling, and repair fatigue."},
+    "abbey_patients": {"label": "Abbey Patients", "description": "People depending on warmth, broth, and reliable care."}
+  },
+  "ui_text": {
+    "panels": {
+      "current_problem_label": "Immediate Crisis",
+      "what_changed_label": "What Changed Since Last Turn",
+      "what_happens_next_label": "What Happens Next",
+      "if_you_do_nothing_label": "If You Do Nothing",
+      "who_is_affected_label": "Who Is Affected",
+      "why_this_is_happening_label": "Why This Is Happening",
+      "system_pressures_label": "Political and System Pressures",
+      "review_label": "Journal"
+    },
+    "actions": {"choose_label": "Choose Your Response", "confirm_label": "Run Turn", "inspect_label": "Look Up Terms"},
+    "overlays": {"glossary_tab": "Glossary", "background_tab": "Background", "systems_tab": "Systems", "skills_tab": "GED Skills", "advanced_tab": "Advanced"}
+  }
+}

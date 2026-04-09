@@ -1,0 +1,19 @@
+{
+  "entries": [
+    {
+      "term": "Ley Network",
+      "definition": "The ley network is the city's shared magical energy system.",
+      "why_it_matters": "It fills the same systems role that a grid or other core operating capacity would in another scenario.",
+      "related": ["Arcane Power", "Ward Towers"]
+    },
+    {
+      "term": "Ward Tower",
+      "definition": "Ward towers regulate and route civic magic across the city.",
+      "why_it_matters": "If they weaken, multiple services can fail together.",
+      "related": ["Ley Network", "Enchanted Waterworks"]
+    }
+  ],
+  "background_notes": [
+    "This pack exists mainly to prove that canonical systems can render through magical mechanism language without changing engine logic."
+  ]
+}

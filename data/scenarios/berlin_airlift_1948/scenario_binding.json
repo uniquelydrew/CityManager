@@ -1,0 +1,247 @@
+{
+  "scenario_id": "berlin_airlift_1948",
+  "scenario_version": 1,
+  "setting_profile": {
+    "era": "modern",
+    "tone": "civic_crisis",
+    "fictionality": "historical",
+    "localization_key": "en_US"
+  },
+  "systems": {
+    "energy": {
+      "label": "Electricity",
+      "short_label": "Power",
+      "description": "Electrical supply available to keep the city running.",
+      "mechanism_label": "Grid supply and imported fuel",
+      "mechanism_description": "Electricity depends on fuel deliveries, generation capacity, and the workers who keep essential systems operating.",
+      "display_unit": {"mode": "named_unit", "unit_label": "kWh", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "bar", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Critical", "warning": "Strained", "stable": "Stable", "surplus": "Surplus"},
+      "risk_labels": {"primary": "Power generation risk", "shortage": "Power shortage", "disruption": "Grid instability"},
+      "glossary": {
+        "quick_explain": "Electricity powers water treatment, heat, transport support, and emergency response.",
+        "why_it_matters": "If electricity fails, multiple city services can fail together.",
+        "examples": ["Water treatment", "Hospitals", "Transit signals"]
+      },
+      "tutorial": {
+        "player_hint": "Protect electricity first when several essential services depend on it.",
+        "common_misreadings": ["A large draw on electricity is not automatically bad if reserves and imports are holding."]
+      },
+      "aliases": ["power", "grid"]
+    },
+    "water": {
+      "label": "Water",
+      "short_label": "Water",
+      "description": "Usable water available for homes, hospitals, and essential services.",
+      "mechanism_label": "Treatment and distribution",
+      "mechanism_description": "Water depends on electricity, repair capacity, and reliable movement through damaged systems.",
+      "display_unit": {"mode": "named_unit", "unit_label": "wu", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "bar", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Critical", "warning": "Warning", "stable": "Safe", "surplus": null},
+      "risk_labels": {"primary": "Water delivery risk", "shortage": "Water shortage", "disruption": "Water service disruption"},
+      "glossary": {
+        "quick_explain": "Water service depends on power, pipes, and the crews who keep water moving.",
+        "why_it_matters": "Losing water service quickly harms health and trust.",
+        "examples": ["Household water", "Hospital supply", "Sanitation"]
+      },
+      "tutorial": {"player_hint": "If power looks weak, watch water next.", "common_misreadings": []},
+      "aliases": ["water service"]
+    },
+    "food": {
+      "label": "Food",
+      "short_label": "Food",
+      "description": "Stored and delivered food available to households and institutions.",
+      "mechanism_label": "Rations and deliveries",
+      "mechanism_description": "Food depends on transport throughput, labor, and enough water and power to keep distribution working.",
+      "display_unit": {"mode": "named_unit", "unit_label": "meals", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "bar", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Critical", "warning": "Warning", "stable": "Safe", "surplus": null},
+      "risk_labels": {"primary": "Food supply risk", "shortage": "Food shortage", "disruption": "Ration breakdown"},
+      "glossary": {
+        "quick_explain": "Food represents both reserves and the ability to get rations to people.",
+        "why_it_matters": "Food strain weakens health, labor capacity, and public confidence.",
+        "examples": ["Household rations", "Hospital meals"]
+      },
+      "tutorial": {"player_hint": "Food is often the next system to weaken after power and water.", "common_misreadings": []},
+      "aliases": ["rations"]
+    },
+    "health": {
+      "label": "Health",
+      "short_label": "Health",
+      "description": "Overall population health and resilience.",
+      "mechanism_label": null,
+      "mechanism_description": null,
+      "display_unit": {"mode": "normalized", "unit_label": null, "precision": 0, "suffix": "%"},
+      "display_style": {"preferred_visual": "bar", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Critical", "warning": "Warning", "stable": "Safe", "surplus": null},
+      "risk_labels": {"primary": null, "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Health shows how well people can endure the crisis.", "why_it_matters": "Lower health reduces workforce strength and raises visible social strain.", "examples": ["Illness burden", "Cold exposure"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    },
+    "workforce": {
+      "label": "Workforce",
+      "short_label": "Workforce",
+      "description": "Available labor capacity for production, unloading, repairs, and relief work.",
+      "mechanism_label": "Labor supply",
+      "mechanism_description": "Worker health, fatigue, and unrest shape how much useful labor is available each turn.",
+      "display_unit": {"mode": "named_unit", "unit_label": "labor-hours", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "number", "color_semantics": "default", "show_trend": true, "show_state_word": false},
+      "state_words": {"critical": "Stalled", "warning": "Tight", "stable": "Ready", "surplus": null},
+      "risk_labels": {"primary": "Workforce strain", "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Workforce capacity measures how much labor the city can actually use this turn.", "why_it_matters": "Low labor slows repairs, unloading, and service recovery.", "examples": ["Airlift crews", "Repair crews", "Utility staff"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": ["labor"]
+    },
+    "treasury": {
+      "label": "Budget",
+      "short_label": "Budget",
+      "description": "Money available to keep emergency action going.",
+      "mechanism_label": null,
+      "mechanism_description": null,
+      "display_unit": {"mode": "named_unit", "unit_label": "USD", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "number", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Critical", "warning": "Tight", "stable": "Healthy", "surplus": "Strong"},
+      "risk_labels": {"primary": "Budget strain", "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "The budget limits how much emergency relief and policy action you can sustain.", "why_it_matters": "A weak budget shrinks future options.", "examples": ["Supply purchases", "Policy costs"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": ["treasury"]
+    },
+    "trust": {
+      "label": "Public Trust",
+      "short_label": "Trust",
+      "description": "How much residents believe leaders and institutions are acting fairly and effectively.",
+      "mechanism_label": null,
+      "mechanism_description": null,
+      "display_unit": {"mode": "normalized", "unit_label": null, "precision": 2, "suffix": null},
+      "display_style": {"preferred_visual": "badge", "color_semantics": "default", "show_trend": true, "show_state_word": false},
+      "state_words": {"critical": "Breaking", "warning": "Slipping", "stable": "Holding", "surplus": null},
+      "risk_labels": {"primary": "Public trust risk", "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Public trust shows whether people still believe emergency decisions are fair and effective.", "why_it_matters": "Low trust makes every shortage more politically dangerous.", "examples": ["Compliance", "Visible confidence"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    },
+    "legitimacy": {
+      "label": "Legitimacy",
+      "short_label": "Legitimacy",
+      "description": "The perceived right of the authorities to make hard emergency decisions.",
+      "mechanism_label": null,
+      "mechanism_description": null,
+      "display_unit": {"mode": "normalized", "unit_label": null, "precision": 2, "suffix": null},
+      "display_style": {"preferred_visual": "badge", "color_semantics": "default", "show_trend": true, "show_state_word": false},
+      "state_words": {"critical": "Weak", "warning": "Questioned", "stable": "Accepted", "surplus": null},
+      "risk_labels": {"primary": "Legitimacy risk", "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Legitimacy is the public sense that the authorities have the right to govern.", "why_it_matters": "Low legitimacy makes sacrifices harder to sustain.", "examples": ["Civil authority", "Political backing"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    },
+    "logistics": {
+      "label": "Transport Throughput",
+      "short_label": "Transport",
+      "description": "How much supply and repair activity the city can actually move through its constrained routes.",
+      "mechanism_label": "Airlift and ground handling",
+      "mechanism_description": "Transport depends on crews, vehicles, facilities, and working institutions.",
+      "display_unit": {"mode": "normalized", "unit_label": null, "precision": 2, "suffix": null},
+      "display_style": {"preferred_visual": "gauge", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Broken", "warning": "Strained", "stable": "Working", "surplus": null},
+      "risk_labels": {"primary": "Transport risk", "shortage": null, "disruption": "Distribution delay"},
+      "glossary": {"quick_explain": "Transport throughput shows how much the city can move and unload in time to matter.", "why_it_matters": "Supplies do not help if they cannot reach people and services.", "examples": ["Sorties", "Unloading crews", "Rail links"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": ["airlift"]
+    }
+  },
+  "services": {
+    "water_delivery": {
+      "label": "Water Service",
+      "description": "Clean water treatment and delivery across the city.",
+      "failure_text": "Water treatment and distribution may become unreliable.",
+      "glossary": {"quick_explain": "Water service is the function people depend on, not just the water stock itself.", "why_it_matters": "Water service failures quickly harm health and trust."}
+    },
+    "heating_access": {
+      "label": "Heating Access",
+      "description": "Reliable heating for homes, hospitals, and other vital spaces.",
+      "failure_text": "Heating reliability may collapse.",
+      "glossary": {"quick_explain": "Heating access tracks whether power and fuel are still keeping people warm.", "why_it_matters": "Cold exposure quickly worsens hardship and health risk."}
+    },
+    "food_distribution": {
+      "label": "Food Distribution",
+      "description": "Movement of food from reserves and deliveries into households and institutions.",
+      "failure_text": "Ration distribution may become unreliable.",
+      "glossary": {"quick_explain": "Food distribution matters because supplies must still reach people.", "why_it_matters": "Distribution weakness can create shortages even when stock exists."}
+    },
+    "transport_access": {
+      "label": "Transport Access",
+      "description": "Movement through routes, depots, and unloading networks.",
+      "failure_text": "Transport access may bottleneck relief and repair work.",
+      "glossary": {"quick_explain": "Transport access is the city's ability to move relief, labor, and repair materials.", "why_it_matters": "Weak transport makes every other recovery step slower."}
+    },
+    "medical_care": {
+      "label": "Medical Care",
+      "description": "Capacity to protect vulnerable groups and keep hospitals running.",
+      "failure_text": "Medical care may become unreliable.",
+      "glossary": {"quick_explain": "Medical care reflects whether hospitals can still function.", "why_it_matters": "Medical strain is highly visible and politically costly."}
+    },
+    "emergency_response": {
+      "label": "Emergency Response",
+      "description": "Ability of institutions to respond to the crisis quickly and visibly.",
+      "failure_text": "Emergency response may slow down.",
+      "glossary": {"quick_explain": "Emergency response combines money, logistics, and authority.", "why_it_matters": "Slow response magnifies public fear and disorder."}
+    },
+    "public_order": {
+      "label": "Public Order",
+      "description": "Visible social stability and manageable disruption.",
+      "failure_text": "Disorder and incident pressure may rise.",
+      "glossary": {"quick_explain": "Public order tracks whether daily life remains stable enough for recovery work.", "why_it_matters": "Visible disorder makes every shortage harder to manage."}
+    }
+  },
+  "resources": {
+    "water": {"label": "Water", "description": "Emergency water supply for direct relief and service support.", "display_unit": {"mode": "named_unit", "unit_label": "wu", "precision": 0}, "aliases": []},
+    "electricity": {"label": "Power", "description": "Emergency imported electricity or equivalent direct power support.", "display_unit": {"mode": "named_unit", "unit_label": "kWh", "precision": 0}, "aliases": ["energy"]},
+    "food": {"label": "Food", "description": "Emergency food and ration support.", "display_unit": {"mode": "named_unit", "unit_label": "meals", "precision": 0}, "aliases": []},
+    "fuel": {"label": "Fuel", "description": "Fuel used to sustain electricity generation and heating.", "display_unit": {"mode": "named_unit", "unit_label": "units", "precision": 0}, "aliases": ["coal"]},
+    "materials": {"label": "Repair Materials", "description": "Materials used to keep infrastructure functioning.", "display_unit": {"mode": "named_unit", "unit_label": "crates", "precision": 0}, "aliases": []},
+    "labor_hours": {"label": "Labor Hours", "description": "Available labor effort for unloading, repair, and service support.", "display_unit": {"mode": "named_unit", "unit_label": "labor-hours", "precision": 0}, "aliases": ["workforce_capacity"]},
+    "coal": {"label": "Coal", "description": "Solid fuel central to the airlift and heating emergency.", "display_unit": {"mode": "named_unit", "unit_label": "tons", "precision": 0}, "aliases": []},
+    "rail_capacity": {"label": "Rail Capacity", "description": "Throughput available on usable rail links.", "display_unit": {"mode": "normalized", "unit_label": null, "precision": 2}, "aliases": []},
+    "foreign_aid": {"label": "Foreign Aid", "description": "Outside support that helps sustain the city.", "display_unit": {"mode": "hidden", "unit_label": null, "precision": 0}, "aliases": []}
+  },
+  "risks": {
+    "energy_instability": {"label": "Power may fail soon", "summary": "Electricity is at risk of falling below what essential services need.", "if_ignored": "If electricity falls further, heating, water, and emergency response may weaken together.", "mitigation_hint": "Import power or fuel, or reduce demand."},
+    "water_shortage": {"label": "Water delivery may break down", "summary": "Water service is at risk of becoming unreliable.", "if_ignored": "If water weakens, health and food security may worsen next.", "mitigation_hint": "Protect electricity, add water, and reduce leakage."},
+    "food_collapse": {"label": "Food stores are running low", "summary": "Food reserves and distribution are under strain.", "if_ignored": "If food keeps falling, health and workforce strength may decline.", "mitigation_hint": "Import food and protect water and transport."},
+    "budget_erosion": {"label": "The budget is under pressure", "summary": "Emergency spending is eroding fiscal room.", "if_ignored": "If the budget keeps shrinking, future response options will narrow.", "mitigation_hint": "Spend carefully and restore core systems first."},
+    "unrest_spike": {"label": "Workforce strain is rising", "summary": "Social and labor pressure is getting harder to manage.", "if_ignored": "If strain rises further, service and income problems may spread.", "mitigation_hint": "Protect visible services and avoid preventable hardship."},
+    "institutional_breakdown": {"label": "Institutions may jam up", "summary": "Transport, distribution, and administration are under stress.", "if_ignored": "If institutions stall, even available supplies may not reach people.", "mitigation_hint": "Support throughput, repairs, and frontline operations."},
+    "political_stalemate": {"label": "Support for strong action is weakening", "summary": "Coalition support is becoming harder to hold together.", "if_ignored": "If support falls further, stronger policies may become unavailable.", "mitigation_hint": "Choose visible relief that key actors can still defend."},
+    "public_trust_collapse": {"label": "Public trust is slipping", "summary": "Residents are losing confidence in the response.", "if_ignored": "If trust falls, backlash and instability may spread faster.", "mitigation_hint": "Protect the services people see and feel most directly."}
+  },
+  "actor_groups": {
+    "households": {"label": "Urban Households", "description": "Families facing cold homes, thinner supplies, and service disruption."},
+    "industrial_workers": {"label": "Industrial Workers", "description": "Workers carrying long shifts and ration fatigue."},
+    "hospital_patients": {"label": "Hospital Patients", "description": "Medically vulnerable residents who rely on stable power, heat, and water."}
+  },
+  "ui_text": {
+    "panels": {
+      "current_problem_label": "Immediate Crisis",
+      "what_changed_label": "What Changed Since Last Turn",
+      "what_happens_next_label": "What Happens Next",
+      "if_you_do_nothing_label": "If You Do Nothing",
+      "who_is_affected_label": "Who Is Affected",
+      "why_this_is_happening_label": "Why This Is Happening",
+      "system_pressures_label": "Political and System Pressures",
+      "review_label": "Journal"
+    },
+    "actions": {
+      "choose_label": "Choose Your Response",
+      "confirm_label": "Run Turn",
+      "inspect_label": "Look Up Terms"
+    },
+    "overlays": {
+      "glossary_tab": "Glossary",
+      "background_tab": "Background",
+      "systems_tab": "Systems",
+      "skills_tab": "GED Skills",
+      "advanced_tab": "Advanced"
+    }
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "profiles": [
+    {
+      "key": "narrative",
+      "description": "Scenario-first narrative presentation that hides debug terms.",
+      "text_policy": {
+        "prefer_mechanism_terms": true,
+        "prefer_system_terms": false,
+        "allow_canonical_keys": false,
+        "verbosity": "medium",
+        "reading_level_hint": "guided_player"
+      },
+      "panel_visibility": {
+        "show_system_keys": false,
+        "show_units": true,
+        "show_dependencies": false,
+        "show_skill_tags": false,
+        "show_mechanism_descriptions": true,
+        "show_debug_deltas": false
+      }
+    },
+    {
+      "key": "standard",
+      "description": "Default player mode with scenario labels and concise explanations.",
+      "text_policy": {
+        "prefer_mechanism_terms": true,
+        "prefer_system_terms": true,
+        "allow_canonical_keys": false,
+        "verbosity": "medium",
+        "reading_level_hint": "ged"
+      },
+      "panel_visibility": {
+        "show_system_keys": false,
+        "show_units": true,
+        "show_dependencies": false,
+        "show_skill_tags": true,
+        "show_mechanism_descriptions": true,
+        "show_debug_deltas": false
+      }
+    },
+    {
+      "key": "instructional",
+      "description": "Player mode plus stronger teaching support and GED scaffolding.",
+      "text_policy": {
+        "prefer_mechanism_terms": true,
+        "prefer_system_terms": true,
+        "allow_canonical_keys": false,
+        "verbosity": "high",
+        "reading_level_hint": "ged_support"
+      },
+      "panel_visibility": {
+        "show_system_keys": false,
+        "show_units": true,
+        "show_dependencies": true,
+        "show_skill_tags": true,
+        "show_mechanism_descriptions": true,
+        "show_debug_deltas": false
+      }
+    },
+    {
+      "key": "debug",
+      "description": "Analyst mode exposing canonical keys, dependencies, and raw deltas.",
+      "text_policy": {
+        "prefer_mechanism_terms": false,
+        "prefer_system_terms": true,
+        "allow_canonical_keys": true,
+        "verbosity": "high",
+        "reading_level_hint": null
+      },
+      "panel_visibility": {
+        "show_system_keys": true,
+        "show_units": true,
+        "show_dependencies": true,
+        "show_skill_tags": true,
+        "show_mechanism_descriptions": true,
+        "show_debug_deltas": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "policy_options": [
+    {
+      "policy_id": "stabilize_central_ward",
+      "label": "AA",
+      "kind": "emergency_action",
+      "policy_domain": "ward_stabilization",
+      "cost": 140.0,
+      "stacking_mode": "add",
+      "duration_turns": 1,
+      "instant_effects": {"resources.energy": 12.0, "resources.materials": 4.0},
+      "persistent_effects": {},
+      "actor_effects": {"ward_council": 0.04},
+      "indicator_effects": {"society.public_trust": 0.03},
+      "historical_framing": "Direct scarce effort into stabilizing the central ward lattice first.",
+      "explanation_text": "Stabilizing the central ward gives fast relief but leaves outlying districts tense."
+    }
+  ]
+}

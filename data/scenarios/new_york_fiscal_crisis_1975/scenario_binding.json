@@ -1,0 +1,166 @@
+{
+  "scenario_id": "new_york_fiscal_crisis_1975",
+  "scenario_version": 1,
+  "setting_profile": {
+    "era": "modern",
+    "tone": "urban_fiscal_crisis",
+    "fictionality": "historical",
+    "localization_key": "en_US"
+  },
+  "systems": {
+    "energy": {
+      "label": "Electricity",
+      "short_label": "Power",
+      "description": "Electrical supply available to keep the city and its institutions running.",
+      "mechanism_label": "Urban grid and service demand",
+      "mechanism_description": "Electricity depends on fuel, labor, and the city's ability to keep essential operations functioning.",
+      "display_unit": {"mode": "named_unit", "unit_label": "kWh", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "bar", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Critical", "warning": "Strained", "stable": "Stable", "surplus": "Surplus"},
+      "risk_labels": {"primary": "Power risk", "shortage": "Power shortage", "disruption": "Service instability"},
+      "glossary": {"quick_explain": "Electricity powers the systems that keep the city functional.", "why_it_matters": "If power weakens, visible service reliability falls quickly.", "examples": ["Transit support", "Hospitals", "Public buildings"]},
+      "tutorial": {"player_hint": "Power still matters here, even though the main crisis is fiscal and political.", "common_misreadings": []},
+      "aliases": ["power", "grid"]
+    },
+    "water": {
+      "label": "Water Service",
+      "short_label": "Water",
+      "description": "Usable water available to homes and institutions.",
+      "mechanism_label": "Treatment and distribution",
+      "mechanism_description": "Water depends on power, repair capacity, and institutional reliability.",
+      "display_unit": {"mode": "named_unit", "unit_label": "wu", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "bar", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Critical", "warning": "Warning", "stable": "Safe", "surplus": null},
+      "risk_labels": {"primary": "Water service risk", "shortage": "Water shortage", "disruption": "Distribution instability"},
+      "glossary": {"quick_explain": "Water service represents the city's ability to keep clean water reliably available.", "why_it_matters": "Service failures are politically visible and socially damaging.", "examples": ["Households", "Hospitals"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    },
+    "food": {
+      "label": "Food Supply",
+      "short_label": "Food",
+      "description": "Food reserves and distribution support for households and vulnerable groups.",
+      "mechanism_label": "Distribution and frontline services",
+      "mechanism_description": "Food security depends on transport, labor, and enough public capacity to keep supplies moving.",
+      "display_unit": {"mode": "named_unit", "unit_label": "meals", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "bar", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Critical", "warning": "Warning", "stable": "Safe", "surplus": null},
+      "risk_labels": {"primary": "Food supply risk", "shortage": "Food shortage", "disruption": "Distribution pressure"},
+      "glossary": {"quick_explain": "Food supply tracks both stock and the city's ability to move support where it is needed.", "why_it_matters": "Food strain damages health, workforce stability, and public trust.", "examples": ["School meals", "Emergency support"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    },
+    "health": {
+      "label": "Health", "short_label": "Health", "description": "Overall population health and resilience.",
+      "mechanism_label": null, "mechanism_description": null,
+      "display_unit": {"mode": "normalized", "unit_label": null, "precision": 0, "suffix": "%"},
+      "display_style": {"preferred_visual": "bar", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Critical", "warning": "Weak", "stable": "Safe", "surplus": null},
+      "risk_labels": {"primary": null, "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Health reflects how well residents can withstand service cuts and hardship.", "why_it_matters": "Poor health weakens labor capacity and raises visible social strain.", "examples": ["Hospital burden", "Neighborhood strain"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    },
+    "workforce": {
+      "label": "Municipal Workforce", "short_label": "Workforce", "description": "Available labor capacity across city services and institutions.",
+      "mechanism_label": "Staffing and labor stability", "mechanism_description": "Workforce strength depends on health, labor relations, and the city's ability to keep people engaged.",
+      "display_unit": {"mode": "named_unit", "unit_label": "labor-hours", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "number", "color_semantics": "default", "show_trend": true, "show_state_word": false},
+      "state_words": {"critical": "Stalled", "warning": "Tight", "stable": "Ready", "surplus": null},
+      "risk_labels": {"primary": "Workforce strain", "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Municipal workforce tracks usable staffing strength for services and repairs.", "why_it_matters": "Low staffing slows repair, transport, and visible service response.", "examples": ["Transit workers", "Clerks", "Frontline staff"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": ["staffing"]
+    },
+    "treasury": {
+      "label": "City Budget", "short_label": "Budget", "description": "The city's remaining fiscal room for emergency action and ongoing services.",
+      "mechanism_label": "Credit and revenue room", "mechanism_description": "Budget capacity depends on revenue stability, debt pressure, and political support for difficult choices.",
+      "display_unit": {"mode": "named_unit", "unit_label": "USD", "precision": 0, "suffix": null},
+      "display_style": {"preferred_visual": "number", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Critical", "warning": "Tight", "stable": "Healthy", "surplus": "Strong"},
+      "risk_labels": {"primary": "Fiscal strain", "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "The city budget limits how much service protection and emergency action remain possible.", "why_it_matters": "Fiscal strain is the central pressure in this scenario.", "examples": ["Debt pressure", "Service cuts", "Credit support"]},
+      "tutorial": {"player_hint": "Budget decisions here are also political decisions.", "common_misreadings": []},
+      "aliases": ["treasury"]
+    },
+    "trust": {
+      "label": "Public Trust", "short_label": "Trust", "description": "How much residents believe the city's response is fair and competent.",
+      "mechanism_label": null, "mechanism_description": null,
+      "display_unit": {"mode": "normalized", "unit_label": null, "precision": 2, "suffix": null},
+      "display_style": {"preferred_visual": "badge", "color_semantics": "default", "show_trend": true, "show_state_word": false},
+      "state_words": {"critical": "Breaking", "warning": "Slipping", "stable": "Holding", "surplus": null},
+      "risk_labels": {"primary": "Trust risk", "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Public trust reflects whether people still believe city leaders will protect essential services fairly.", "why_it_matters": "Low trust makes every service cut more politically dangerous.", "examples": ["Neighborhood trust", "Visible confidence"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    },
+    "legitimacy": {
+      "label": "City Legitimacy", "short_label": "Legitimacy", "description": "The perceived right of city leadership to direct painful emergency choices.",
+      "mechanism_label": null, "mechanism_description": null,
+      "display_unit": {"mode": "normalized", "unit_label": null, "precision": 2, "suffix": null},
+      "display_style": {"preferred_visual": "badge", "color_semantics": "default", "show_trend": true, "show_state_word": false},
+      "state_words": {"critical": "Questioned", "warning": "Fragile", "stable": "Accepted", "surplus": null},
+      "risk_labels": {"primary": "Legitimacy risk", "shortage": null, "disruption": null},
+      "glossary": {"quick_explain": "Legitimacy is the belief that city leaders still have the right to govern through the crisis.", "why_it_matters": "Low legitimacy makes cuts and bargains harder to sustain.", "examples": ["City Hall authority", "Mandate to act"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": []
+    },
+    "logistics": {
+      "label": "Service Throughput", "short_label": "Throughput", "description": "How much movement, repair, and frontline delivery the city can still carry out.",
+      "mechanism_label": "Transit and frontline operations", "mechanism_description": "Throughput depends on transit, institutions, staffing, and whether disruptions stay manageable.",
+      "display_unit": {"mode": "normalized", "unit_label": null, "precision": 2, "suffix": null},
+      "display_style": {"preferred_visual": "gauge", "color_semantics": "default", "show_trend": true, "show_state_word": true},
+      "state_words": {"critical": "Broken", "warning": "Strained", "stable": "Working", "surplus": null},
+      "risk_labels": {"primary": "Institutional throughput risk", "shortage": null, "disruption": "Service bottleneck"},
+      "glossary": {"quick_explain": "Service throughput tracks whether the city can still carry out what it plans.", "why_it_matters": "Weak throughput turns every policy into a slower and less visible response.", "examples": ["Transit", "Dispatch", "Repairs"]},
+      "tutorial": {"player_hint": null, "common_misreadings": []},
+      "aliases": ["transport throughput"]
+    }
+  },
+  "services": {
+    "water_delivery": {"label": "Water Service", "description": "Reliable city water access.", "failure_text": "Water service may become unreliable.", "glossary": {"quick_explain": "Water service is the function households and institutions rely on.", "why_it_matters": "Service failure would make the fiscal crisis immediately more visible."}},
+    "heating_access": {"label": "Heating Access", "description": "Reliable heating for homes and key facilities.", "failure_text": "Heating reliability may weaken.", "glossary": {"quick_explain": "Heating access tracks whether power and fuel are still keeping people safe.", "why_it_matters": "Visible hardship from cold quickly worsens public anger."}},
+    "food_distribution": {"label": "Food Distribution", "description": "Movement of food support to households and institutions.", "failure_text": "Food delivery may become unreliable.", "glossary": {"quick_explain": "Food distribution matters because support still has to reach people.", "why_it_matters": "Weak delivery spreads hardship even when resources exist."}},
+    "transport_access": {"label": "Transit and Transport Access", "description": "Movement of people, goods, and repairs through the city.", "failure_text": "Transport access may bottleneck relief and service work.", "glossary": {"quick_explain": "Transit and transport access show whether the city can still move what it needs.", "why_it_matters": "Transport weakness quickly spreads service pain."}},
+    "medical_care": {"label": "Medical Care", "description": "Capacity to keep public health services functioning.", "failure_text": "Medical care may become less reliable.", "glossary": {"quick_explain": "Medical care reflects whether public health institutions still have enough support.", "why_it_matters": "Visible hospital strain is socially and politically costly."}},
+    "emergency_response": {"label": "Emergency Response", "description": "City ability to react quickly to escalating problems.", "failure_text": "Emergency response may slow down.", "glossary": {"quick_explain": "Emergency response combines money, staffing, and working institutions.", "why_it_matters": "Slow response makes leadership look weaker."}},
+    "public_order": {"label": "Public Order", "description": "Visible social stability and manageable disruption.", "failure_text": "Disorder and disruption may rise.", "glossary": {"quick_explain": "Public order shows whether civic stress is spilling into visible instability.", "why_it_matters": "Disorder can deepen both fiscal and political crisis."}}
+  },
+  "resources": {
+    "water": {"label": "Water", "description": "Emergency water support.", "display_unit": {"mode": "named_unit", "unit_label": "wu", "precision": 0}, "aliases": []},
+    "electricity": {"label": "Power", "description": "Emergency power support.", "display_unit": {"mode": "named_unit", "unit_label": "kWh", "precision": 0}, "aliases": ["energy"]},
+    "food": {"label": "Food", "description": "Emergency food support.", "display_unit": {"mode": "named_unit", "unit_label": "meals", "precision": 0}, "aliases": []},
+    "materials": {"label": "Repair Materials", "description": "Materials used to keep service infrastructure functioning.", "display_unit": {"mode": "named_unit", "unit_label": "crates", "precision": 0}, "aliases": []},
+    "labor_hours": {"label": "Labor Hours", "description": "Useful labor available for city services and repair.", "display_unit": {"mode": "named_unit", "unit_label": "labor-hours", "precision": 0}, "aliases": ["workforce_capacity"]},
+    "tax_receipts": {"label": "Tax Receipts", "description": "Incoming revenue support.", "display_unit": {"mode": "named_unit", "unit_label": "USD", "precision": 0}, "aliases": []}
+  },
+  "risks": {
+    "energy_instability": {"label": "Power may fail soon", "summary": "Electricity is at risk of falling below what services need.", "if_ignored": "If power weakens, visible service reliability may collapse quickly.", "mitigation_hint": "Protect power and avoid letting infrastructure strain spread."},
+    "water_shortage": {"label": "Water delivery may break down", "summary": "Water service is under strain.", "if_ignored": "If water weakens further, public health and trust may fall.", "mitigation_hint": "Protect power, repairs, and frontline support."},
+    "food_collapse": {"label": "Food support is running low", "summary": "Food reserves and distribution support are under strain.", "if_ignored": "If food keeps falling, neighborhood hardship will grow.", "mitigation_hint": "Protect distribution and visible frontline services."},
+    "budget_erosion": {"label": "The budget is under pressure", "summary": "Debt and spending pressure are shrinking fiscal room.", "if_ignored": "If the budget keeps shrinking, harder political choices may become unavoidable.", "mitigation_hint": "Weigh every purchase against the broader fiscal and political tradeoff."},
+    "unrest_spike": {"label": "Workforce strain is rising", "summary": "Labor and community tension are rising.", "if_ignored": "If strain rises further, service reliability and trust may fall together.", "mitigation_hint": "Protect frontline services and watch labor costs."},
+    "institutional_breakdown": {"label": "Institutions may jam up", "summary": "Transit, budget coordination, and service delivery are under pressure.", "if_ignored": "If institutions stall, the city may fail even where supplies still exist.", "mitigation_hint": "Reduce bottlenecks and keep visible services functioning."},
+    "political_stalemate": {"label": "Support for strong action is weakening", "summary": "Coalition support is fragile across labor, neighborhoods, and creditors.", "if_ignored": "If support falls further, strong policies may become politically unavailable.", "mitigation_hint": "Choose actions that are defensible as well as efficient."},
+    "public_trust_collapse": {"label": "Public trust is slipping", "summary": "Residents are losing confidence in the city's response.", "if_ignored": "If trust falls, backlash and instability may spread faster.", "mitigation_hint": "Protect the services people see most directly."}
+  },
+  "actor_groups": {
+    "commuters": {"label": "Transit Riders", "description": "Residents relying on functioning urban services."},
+    "public_workers": {"label": "Public Workers", "description": "Workers facing wage restraint, layoffs, and service strain."},
+    "low_income_neighborhoods": {"label": "Low-Income Neighborhoods", "description": "Communities most exposed to service withdrawal and trust loss."}
+  },
+  "ui_text": {
+    "panels": {
+      "current_problem_label": "Immediate Crisis",
+      "what_changed_label": "What Changed Since Last Turn",
+      "what_happens_next_label": "What Happens Next",
+      "if_you_do_nothing_label": "If You Do Nothing",
+      "who_is_affected_label": "Who Is Affected",
+      "why_this_is_happening_label": "Why This Is Happening",
+      "system_pressures_label": "Political and System Pressures",
+      "review_label": "Journal"
+    },
+    "actions": {"choose_label": "Choose Your Response", "confirm_label": "Run Turn", "inspect_label": "Look Up Terms"},
+    "overlays": {"glossary_tab": "Glossary", "background_tab": "Background", "systems_tab": "Systems", "skills_tab": "GED Skills", "advanced_tab": "Advanced"}
+  }
+}

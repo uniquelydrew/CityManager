@@ -1,0 +1,89 @@
+{
+  "canonical_actor_groups": [
+    {
+      "key": "households",
+      "version": 1,
+      "class": "civilian",
+      "sensitivities": {
+        "systems": [
+          {"system": "water", "weight": 0.9},
+          {"system": "food", "weight": 0.9},
+          {"system": "trust", "weight": 0.6}
+        ],
+        "services": [
+          {"service": "water_delivery", "weight": 1.0},
+          {"service": "heating_access", "weight": 0.8}
+        ]
+      },
+      "trust_links": {"institutions": ["civic_authority"], "factions": []},
+      "debug_description": "General resident households."
+    },
+    {
+      "key": "workers",
+      "version": 1,
+      "class": "profession",
+      "sensitivities": {
+        "systems": [
+          {"system": "food", "weight": 0.7},
+          {"system": "health", "weight": 0.8},
+          {"system": "trust", "weight": 0.6}
+        ],
+        "services": [
+          {"service": "transport_access", "weight": 0.8},
+          {"service": "food_distribution", "weight": 0.7}
+        ]
+      },
+      "trust_links": {"institutions": [], "factions": ["labor_bloc"]},
+      "debug_description": "Laboring population and essential workers."
+    },
+    {
+      "key": "patients",
+      "version": 1,
+      "class": "vulnerable_group",
+      "sensitivities": {
+        "systems": [
+          {"system": "water", "weight": 0.8},
+          {"system": "health", "weight": 1.0}
+        ],
+        "services": [
+          {"service": "medical_care", "weight": 1.0},
+          {"service": "heating_access", "weight": 0.7}
+        ]
+      },
+      "trust_links": {"institutions": ["medical_authority"], "factions": []},
+      "debug_description": "Ill or medically vulnerable population."
+    },
+    {
+      "key": "leaders",
+      "version": 1,
+      "class": "institution",
+      "sensitivities": {
+        "systems": [
+          {"system": "legitimacy", "weight": 1.0},
+          {"system": "treasury", "weight": 0.7}
+        ],
+        "services": [
+          {"service": "emergency_response", "weight": 0.8}
+        ]
+      },
+      "trust_links": {"institutions": ["civic_authority"], "factions": ["elite_bloc"]},
+      "debug_description": "Decision-making leadership and governance centers."
+    },
+    {
+      "key": "nobles",
+      "version": 1,
+      "class": "elite",
+      "sensitivities": {
+        "systems": [
+          {"system": "legitimacy", "weight": 0.6},
+          {"system": "treasury", "weight": 0.5}
+        ],
+        "services": [
+          {"service": "public_order", "weight": 0.5}
+        ]
+      },
+      "trust_links": {"institutions": ["crown"], "factions": ["elite_bloc"]},
+      "debug_description": "Regional or elite power holders."
+    }
+  ]
+}

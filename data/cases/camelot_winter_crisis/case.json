@@ -1,0 +1,329 @@
+{
+  "historical_case_id": "camelot_winter_crisis",
+  "case_metadata": {
+    "title": "Camelot in Winter",
+    "place": "Camelot",
+    "timeframe": "Legendary Britain",
+    "summary": "A hard winter, damaged roads, and a fragile harvest have put Camelot under strain. The court must keep hearths lit, wells flowing, and storehouses supplied while balancing knightly honor, peasant trust, and the competing demands of the Round Table.",
+    "player_role": "You are coordinating the crown's emergency response for Camelot.",
+    "goal_text": "Goal: hold Camelot together through the winter without breaking trust between court, town, and countryside.",
+    "reference_notes": [
+      "Modeled as an Arthurian legendary governance case rather than a historical event.",
+      "Draws on recurring Camelot institutions, characters, and pressures from medieval romance traditions."
+    ]
+  },
+  "world_state": {
+    "governance": {
+      "legitimacy": 0.68,
+      "administrative_capacity": 0.56,
+      "corruption_friction": 0.14,
+      "enforcement_reach": 0.52
+    },
+    "politics": {
+      "coalition_stability": 0.61,
+      "opposition_pressure": 0.39,
+      "elite_resistance": 0.34,
+      "faction_support": {
+        "king_arthur": 0.78,
+        "queen_guinevere": 0.63,
+        "merlin": 0.66,
+        "round_table_knights": 0.58,
+        "border_lords": 0.46
+      }
+    },
+    "society": {
+      "public_trust": 0.57,
+      "class_sector_strain": 0.48,
+      "displacement": 0.18,
+      "labor_unrest": 0.24,
+      "mortality_burden": 0.13
+    },
+    "economic_conditions": {
+      "price_pressure": 0.43,
+      "wage_pressure": 0.29,
+      "revenue_stability": 0.49,
+      "debt_pressure": 0.32,
+      "trade_dependence": 0.46,
+      "import_dependence": 0.41
+    },
+    "services": {
+      "transport_throughput": 0.47,
+      "distribution_capacity": 0.52,
+      "repair_backlog": 0.44,
+      "hospital_pressure": 0.31,
+      "institutional_bottlenecks": 0.41
+    }
+  },
+  "actors": [
+    {
+      "actor_id": "king_arthur",
+      "display_name": "King Arthur",
+      "kind": "monarch",
+      "agenda": "Preserve justice, unity, and the visible moral authority of the crown."
+    },
+    {
+      "actor_id": "queen_guinevere",
+      "display_name": "Queen Guinevere",
+      "kind": "court_leadership",
+      "agenda": "Protect households and maintain confidence in the court's fairness."
+    },
+    {
+      "actor_id": "merlin",
+      "display_name": "Merlin",
+      "kind": "advisor",
+      "agenda": "Use rare magical capacity carefully to stabilize the realm without draining future resilience."
+    },
+    {
+      "actor_id": "round_table_knights",
+      "display_name": "Round Table Knights",
+      "kind": "military_elite",
+      "agenda": "Defend roads, escort supplies, and keep noble honor intact."
+    },
+    {
+      "actor_id": "border_lords",
+      "display_name": "Border Lords",
+      "kind": "regional_elite",
+      "agenda": "Protect their own lands first and resist burdens they consider unfair."
+    }
+  ],
+  "institutions": [
+    {
+      "institution_id": "round_table",
+      "display_name": "The Round Table",
+      "status_indicator": "distribution_capacity"
+    },
+    {
+      "institution_id": "royal_granary",
+      "display_name": "Royal Granary",
+      "status_indicator": "transport_throughput"
+    },
+    {
+      "institution_id": "abbey_infirmary",
+      "display_name": "Abbey Infirmary",
+      "status_indicator": "hospital_pressure"
+    }
+  ],
+  "groups": [
+    {
+      "group_id": "town_households",
+      "display_name": "Town Households",
+      "main_pressure": "cold homes, thin rations, and unreliable well access"
+    },
+    {
+      "group_id": "village_farmers",
+      "display_name": "Village Farmers",
+      "main_pressure": "winter shortages and resentment over court demands"
+    },
+    {
+      "group_id": "castle_guard",
+      "display_name": "Castle Guard and Stablehands",
+      "main_pressure": "long watches, stretched supplies, and repair fatigue"
+    },
+    {
+      "group_id": "abbey_patients",
+      "display_name": "Abbey Patients",
+      "main_pressure": "heating, broth, and medicine reliability"
+    }
+  ],
+  "resources": [
+    { "resource_type_id": "water", "display_name": "Well and River Water" },
+    { "resource_type_id": "electricity", "display_name": "Hearth and Mill Power" },
+    { "resource_type_id": "food", "display_name": "Grain and Salted Stores" },
+    { "resource_type_id": "fuel", "display_name": "Firewood and Charcoal" },
+    { "resource_type_id": "materials", "display_name": "Timber and Stone" },
+    { "resource_type_id": "labor_hours", "display_name": "Guild and Peasant Labor" }
+  ],
+  "indicators": [
+    { "indicator_id": "legitimacy", "section": "governance", "display_name": "Royal Legitimacy", "warn_below": 0.5 },
+    { "indicator_id": "coalition_stability", "section": "politics", "display_name": "Court Unity", "warn_below": 0.5 },
+    { "indicator_id": "public_trust", "section": "society", "display_name": "Common Trust", "warn_below": 0.5 },
+    { "indicator_id": "labor_unrest", "section": "society", "display_name": "Rural Strain", "warn_above": 0.45 },
+    { "indicator_id": "transport_throughput", "section": "services", "display_name": "Road and Wagon Capacity", "warn_below": 0.5 }
+  ],
+  "policy_domains": [
+    "winter_relief",
+    "road_security",
+    "court_bargaining",
+    "mystic_support",
+    "grain_management"
+  ],
+  "policy_options": [
+    {
+      "policy_id": "open_royal_granaries",
+      "label": "A",
+      "kind": "social_policy",
+      "policy_domain": "winter_relief",
+      "cost": 150.0,
+      "stacking_mode": "add",
+      "duration_turns": 1,
+      "instant_effects": {
+        "resources.food": 14.0
+      },
+      "persistent_effects": {},
+      "actor_effects": {
+        "queen_guinevere": 0.05,
+        "border_lords": -0.04
+      },
+      "indicator_effects": {
+        "society.public_trust": 0.06,
+        "society.class_sector_strain": -0.04,
+        "economic_conditions.revenue_stability": -0.03
+      },
+      "historical_framing": "Open the royal granaries for wider relief, accepting strain on crown reserves and noble patience.",
+      "explanation_text": "Granary relief steadied households but raised tension with local elites."
+    },
+    {
+      "policy_id": "merlins_warding_fires",
+      "label": "B",
+      "kind": "emergency_action",
+      "policy_domain": "mystic_support",
+      "cost": 170.0,
+      "stacking_mode": "add",
+      "duration_turns": 1,
+      "instant_effects": {
+        "resources.energy": 18.0,
+        "resources.materials": 4.0
+      },
+      "persistent_effects": {},
+      "actor_effects": {
+        "merlin": 0.05,
+        "border_lords": -0.02
+      },
+      "indicator_effects": {
+        "governance.legitimacy": 0.03,
+        "society.public_trust": 0.02,
+        "services.hospital_pressure": -0.05
+      },
+      "historical_framing": "Ask Merlin to reinforce mills, hearths, and signal fires with temporary wards.",
+      "explanation_text": "Mystic wards provided quick power relief, but magical effort is costly and politically delicate."
+    },
+    {
+      "policy_id": "knightly_escort_circuit",
+      "label": "C",
+      "kind": "administrative_policy",
+      "policy_domain": "road_security",
+      "cost": 130.0,
+      "stacking_mode": "unique",
+      "duration_turns": null,
+      "instant_effects": {
+        "resources.workforce_capacity": 8.0,
+        "resources.materials": 6.0
+      },
+      "persistent_effects": {
+        "rule_overrides.workforce_recovery_bonus": 0.08
+      },
+      "actor_effects": {
+        "round_table_knights": 0.07,
+        "king_arthur": 0.03
+      },
+      "indicator_effects": {
+        "services.transport_throughput": 0.07,
+        "politics.coalition_stability": 0.04,
+        "society.labor_unrest": -0.03
+      },
+      "historical_framing": "Assign rotating knightly escorts to wagons, mills, and winter roads across the kingdom.",
+      "explanation_text": "Knightly escorts improved transport and morale but tied up elite attention."
+    },
+    {
+      "policy_id": "forge_and_feast_curfew",
+      "label": "D",
+      "kind": "economic_policy",
+      "policy_domain": "grain_management",
+      "cost": 95.0,
+      "stacking_mode": "unique",
+      "duration_turns": null,
+      "instant_effects": {},
+      "persistent_effects": {
+        "rule_overrides.energy_demand_multiplier": -0.1
+      },
+      "actor_effects": {
+        "round_table_knights": -0.03,
+        "border_lords": -0.02
+      },
+      "indicator_effects": {
+        "society.public_trust": -0.03,
+        "politics.opposition_pressure": 0.04,
+        "economic_conditions.price_pressure": -0.03
+      },
+      "historical_framing": "Limit feasts, forge fires, and nonessential court consumption to preserve winter reserves.",
+      "explanation_text": "Court cutbacks preserved supply but risked resentment among elites and retainers."
+    },
+    {
+      "policy_id": "queens_common_table",
+      "label": "E",
+      "kind": "political_bargaining_action",
+      "policy_domain": "court_bargaining",
+      "cost": 115.0,
+      "stacking_mode": "unique",
+      "duration_turns": null,
+      "instant_effects": {
+        "resources.food": 6.0,
+        "resources.water": 6.0
+      },
+      "persistent_effects": {},
+      "actor_effects": {
+        "queen_guinevere": 0.08,
+        "border_lords": 0.02,
+        "round_table_knights": 0.03
+      },
+      "indicator_effects": {
+        "society.public_trust": 0.05,
+        "politics.coalition_stability": 0.05,
+        "governance.legitimacy": 0.04
+      },
+      "prerequisites": {
+        "min_legitimacy": 0.45
+      },
+      "historical_framing": "Host a public common table under Guinevere's patronage to bind court generosity to visible relief.",
+      "explanation_text": "A visible act of shared relief improved trust and court unity."
+    }
+  ],
+  "interaction_overrides": {},
+  "events_and_reports": [
+    {
+      "report_id": "winter_court_dispatch",
+      "title": "Winter Court Dispatch",
+      "audience": "player",
+      "trigger": {
+        "type": "always"
+      },
+      "body": "Snowbound roads and weak harvest stores are testing Camelot's promise of just rule."
+    },
+    {
+      "report_id": "border_lords_complaint",
+      "title": "Border Lords' Complaint",
+      "audience": "player",
+      "trigger": {
+        "type": "indicator_below",
+        "path": "politics.faction_support.border_lords",
+        "value": 0.45
+      },
+      "body": "Border lords protest that winter levies and grain demands are falling too unevenly on their lands."
+    },
+    {
+      "report_id": "abbey_infirmary_warning",
+      "title": "Abbey Infirmary Warning",
+      "audience": "player",
+      "trigger": {
+        "type": "indicator_above",
+        "path": "services.hospital_pressure",
+        "value": 0.45
+      },
+      "body": "The abbey infirmary warns that cold wards and thin broth are putting the weak at serious risk."
+    }
+  ],
+  "teaching_signals": {
+    "main_skills": [
+      "systems reasoning",
+      "civic reasoning",
+      "stakeholder reading",
+      "tradeoff analysis"
+    ],
+    "guidance": "Camelot uses the same civic systems logic as the historical cases, but through legendary institutions. Players should compare relief, fairness, and coalition management rather than treating fantasy as a separate ruleset."
+  },
+  "historical_notes": {
+    "mode": "legendary_case",
+    "provenance": "Scenario is literary and legendary rather than historically grounded.",
+    "design_warning": "Whether a scenario is historical or fantastic must remain data-authored; the engine should treat both through the same civic systems framework."
+  }
+}
